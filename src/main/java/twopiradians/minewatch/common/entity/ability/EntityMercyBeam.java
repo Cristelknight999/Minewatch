@@ -82,7 +82,7 @@ public class EntityMercyBeam extends Entity {
 				!ItemMercyWeapon.isStaff(player.getHeldItemMainhand())) &&
 						(player.getHeldItemOffhand() == null || player.getHeldItemOffhand().getItem() != EnumHero.MERCY.weapon || 
 						!ItemMercyWeapon.isStaff(player.getHeldItemOffhand()))) || 
-				Math.sqrt(player.getDistanceSqToEntity(target)) > 15 || !player.canEntityBeSeen(target)))
+				Math.sqrt(player.getDistanceSq(target)) > 15 || !player.canEntityBeSeen(target)))
 			this.setDead();
 		else if (target != null && player != null) {
 			this.setPosition(target.posX, target.posY+target.height/2, target.posZ);

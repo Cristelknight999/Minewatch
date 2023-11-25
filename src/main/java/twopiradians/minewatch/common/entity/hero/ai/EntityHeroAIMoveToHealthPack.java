@@ -68,7 +68,7 @@ public class EntityHeroAIMoveToHealthPack extends EntityAIBase {
 				(((TileEntityHealthPack)entity.world.getTileEntity(healthPack)).getCooldown() <= 100)) {
 			entity.moveForward = 0;
 			entity.moveStrafing = 0;
-			entity.getNavigator().clearPathEntity();
+			entity.getNavigator().clearPath();
 			entity.onPack = true;
 			// keep hacking if Sombra
 			if (!(entity instanceof EntitySombra && TickHandler.hasHandler(handler->handler.identifier == Identifier.SOMBRA_HACK && handler.number > 0, false)))

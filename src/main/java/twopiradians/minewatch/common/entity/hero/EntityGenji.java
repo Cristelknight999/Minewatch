@@ -66,7 +66,7 @@ public class EntityGenji extends EntityHero {
 		public void updateTask() {
 			// stop moving while striking
 			if (TickHandler.hasHandler(entity, Identifier.GENJI_STRIKE)) 
-				this.entity.getNavigator().clearPathEntity();
+				this.entity.getNavigator().clearPath();
 
 			super.updateTask();
 		}

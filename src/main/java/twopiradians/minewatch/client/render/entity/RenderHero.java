@@ -157,7 +157,7 @@ public class RenderHero extends RenderLivingBase<EntityHero> {
 	                entity.rotationPitch = (float)(Math.atan2((double)f1, (double)f6) * (180D / Math.PI));
 	                entity.prevRotationYaw = entity.rotationYaw;
 	                entity.prevRotationPitch = entity.rotationPitch;
-	                this.renderer.getRenderManager().doRenderEntity(entity, 0.0D, 0.0D, 0.0D, 0.0F, partialTicks, false);
+	                this.renderer.getRenderManager().renderEntity(entity, 0.0D, 0.0D, 0.0D, 0.0F, partialTicks, false);
 	                GlStateManager.popMatrix();
 	            }
 

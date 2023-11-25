@@ -98,7 +98,7 @@ public class PassiveManager {
 			if (badBlock || (entity instanceof EntityPlayer && entity.onGround) ||  entity.isInWater() || entity.isInLava()) {
 				playersClimbing.remove(entity);
 			}
-			else if (entity.isCollidedHorizontally && entity.moveForward > 0 && 
+			else if (entity.collidedHorizontally && entity.moveForward > 0 &&
 					!(entity instanceof EntityPlayer && ((EntityPlayer)entity).capabilities.isFlying) && 
 					KeyBind.JUMP.isKeyDown(entity)) {
 				int ticks = playersClimbing.containsKey(entity) ? playersClimbing.get(entity)+1 : 1;
@@ -156,7 +156,7 @@ public class PassiveManager {
 			ChargeManager.subtractFromCurrentCharge(entity, 1, false);
 			entity.motionY = Math.min(entity.motionY+0.22f, Math.max(entity.motionY, 5.5f/20f));
 			if (entity.world.isRemote) {
-				ItemPharahWeapon.spawnJetPackParticles((EntityLivingBase) entity, false);
+				ItemPharahWeapon.spawnJetPackParticles(entity, false);
 				if (!PassiveManager.playersFlying.contains(entity)) {
 					Minewatch.network.sendToServer(new CPacketSimple(24, entity, true));
 					playersFlying.add(entity);
@@ -181,7 +181,7 @@ public class PassiveManager {
 
 			// can wallride
 			if (!hacked && !badBlock && !entity.isInWater() && !entity.isInLava() &&
-					entity.isCollidedHorizontally && 
+					entity.collidedHorizontally &&
 					!(entity instanceof EntityPlayer && ((EntityPlayer)entity).capabilities.isFlying) && 
 					KeyBind.JUMP.isKeyDown(entity)) {
 

@@ -475,28 +475,10 @@ public class GuiTeamStick extends GuiTeamSelector {
 	}
 
 	public void updateEntityLists() {
-		entitiesFind = new ArrayList<EntityLivingBase>(mc.world.getEntities(filter.filter, new Predicate<EntityLivingBase>() {
-			@Override
-			public boolean apply(EntityLivingBase entity) {
-				return (entity.getTeam() == null || !entity.getTeam().isSameTeam(selectedTeam)) && !EntityHelper.shouldIgnoreEntity(entity);
-			}}));
-		entitiesFind.sort(new Comparator<EntityLivingBase>() {
-			@Override
-			public int compare(EntityLivingBase entity1, EntityLivingBase entity2) {
-				return mc.player.getDistanceToEntity(entity1) > mc.player.getDistanceToEntity(entity2) ? 1 : -1;
-			}
-		});
-		entitiesTeam = new ArrayList<EntityLivingBase>(mc.world.getEntities(filter.filter, new Predicate<EntityLivingBase>() {
-			@Override
-			public boolean apply(EntityLivingBase entity) {
-				return entity.getTeam() != null && entity.getTeam().isSameTeam(selectedTeam) && !EntityHelper.shouldIgnoreEntity(entity);
-			}}));
-		entitiesTeam.sort(new Comparator<EntityLivingBase>() {
-			@Override
-			public int compare(EntityLivingBase entity1, EntityLivingBase entity2) {
-				return mc.player.getDistanceToEntity(entity1) > mc.player.getDistanceToEntity(entity2) ? 1 : -1;
-			}
-		});
+		entitiesFind = new ArrayList<EntityLivingBase>(mc.world.getEntities(filter.filter, (Predicate<EntityLivingBase>) entity -> (entity.getTeam() == null || !entity.getTeam().isSameTeam(selectedTeam)) && !EntityHelper.shouldIgnoreEntity(entity)));
+		entitiesFind.sort((o1, o2) -> mc.player.getDistance(o1) > mc.player.getDistance(o2) ? 1 : -1);
+		entitiesTeam = new ArrayList<EntityLivingBase>(mc.world.getEntities(filter.filter, (Predicate<EntityLivingBase>) entity -> entity.getTeam() != null && entity.getTeam().isSameTeam(selectedTeam) && !EntityHelper.shouldIgnoreEntity(entity)));
+		entitiesTeam.sort((o1, o2) -> mc.player.getDistance(o1) > mc.player.getDistance(o2) ? 1 : -1);
 	}
 
 	public void updateTextBoxColor() {

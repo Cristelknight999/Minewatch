@@ -20,22 +20,6 @@ build
 # other
 eclipse
 run
-screenshots/
-saves/
-/config/
-world/
-options.txt
-banned-ips.json
-banned-players.json
-ops.json
-username.json
-usernamecache.json
-server.properties
-servers.dat
-usercache.json
-whitelist.json
-logs/
-crash-reports/
-*.launch
-# Minecraft
-minecraft
+
+# Files from Forge MDK
+forge*changelog.txt

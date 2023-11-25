@@ -143,7 +143,7 @@ public class ItemLucioSoundAmplifier extends ItemMWWeapon {
 						new AxisAlignedBB(player.getPosition().add(-10, -10, -10), 
 								player.getPosition().add(10, 10, 10))))
 					// nearby
-					if (entity2 instanceof EntityLivingBase && entity2.getDistanceToEntity(player) <= 10 &&
+					if (entity2 instanceof EntityLivingBase && entity2.getDistance(player) <= 10 &&
 					EntityHelper.shouldHit(player, entity2, true) && !(entity2 instanceof EntityArmorStand)) {
 						if (!world.isRemote) {
 							if (heal)
@@ -193,7 +193,7 @@ public class ItemLucioSoundAmplifier extends ItemMWWeapon {
 			for (Entity entity : player.world.getEntitiesWithinAABBExcludingEntity(player, player.getEntityBoundingBox().grow(7))) 
 				if (EntityHelper.shouldHit(player, entity, false) && EntityHelper.isInFieldOfVision(player, entity, 90) &&
 						!EntityHelper.shouldIgnoreEntity(entity)) {
-					float distance = player.getDistanceToEntity(entity);
+					float distance = player.getDistance(entity);
 					Vec3d look = player.getLookVec().scale(2);
 					Vec3d base = player.getLookVec().scale(player instanceof EntityHero ? 1.5d : 1.5d);
 					base = new Vec3d(base.x, base.y * 1.5d, base.z);

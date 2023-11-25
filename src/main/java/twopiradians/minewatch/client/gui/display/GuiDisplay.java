@@ -78,7 +78,7 @@ public class GuiDisplay extends GuiScreen {
 			guiPlayer.renderYawOffset = 0.0F;
 			mc.getRenderManager().setPlayerViewY(-20f);
 			if (mode == 0 || mode == 1)
-				mc.getRenderManager().doRenderEntity(guiPlayer, 0, 0.05d, 5.0D, 0.0F, 0.01f, true);
+				mc.getRenderManager().renderEntity(guiPlayer, 0, 0.05d, 5.0D, 0.0F, 0.01f, true);
 			GlStateManager.scale(1/scale, 1/scale, 1/scale);
 			GlStateManager.popMatrix();
 

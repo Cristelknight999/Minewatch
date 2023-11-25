@@ -56,7 +56,7 @@ public class RenderMoiraOrb extends RenderSimple<EntityMoiraOrb> {
 			Vec3d tetherVec = EntityHelper.getEntityPartialPos(tether).subtract(EntityHelper.getEntityPartialPos(Minewatch.proxy.getRenderViewEntity()));
 			Vector2f rotations = EntityHelper.getDirectLookAngles(tether, entity);
 			rotations = new Vector2f(rotations.y, rotations.x);
-			double distance = entity.getDistanceToEntity(tether)*0.1f-entity.width/2f;
+			double distance = entity.getDistance(tether)*0.1f-entity.width/2f;
 			double size = (entity.chargeClient / 80f) * 35d;
 			double deg_to_rad = 0.0174532925d;
 			double precision = 0.05d;

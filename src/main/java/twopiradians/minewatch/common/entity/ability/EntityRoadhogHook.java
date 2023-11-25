@@ -125,7 +125,7 @@ public class EntityRoadhogHook extends EntityMW {
 						this.setDead();
 				}
 			}
-			else if (this.isCollided) {
+			else if (this.collided) {
 				this.setRetracting();
 			}
 		}

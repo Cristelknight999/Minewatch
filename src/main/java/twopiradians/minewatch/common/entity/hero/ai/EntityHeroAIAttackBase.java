@@ -44,9 +44,9 @@ public abstract class EntityHeroAIAttackBase extends EntityAIBase {
 				!TickHandler.hasHandler(entity.getAttackTarget(), Identifier.ANA_SLEEP) && 
 				!TickHandler.hasHandler(entity.getAttackTarget(), Identifier.MOIRA_FADE) && 
 				(!TickHandler.hasHandler(entity.getAttackTarget(), Identifier.SOMBRA_INVISIBLE) || 
-						entity.getDistanceToEntity(entity.getAttackTarget()) < 5) && 
+						entity.getDistance(entity.getAttackTarget()) < 5) &&
 				!TickHandler.hasHandler(entity.getAttackTarget(), Identifier.MEI_CRYSTAL) && 
-				entity.getDistanceToEntity(entity.getAttackTarget()) < entity.getEntityAttribute(SharedMonsterAttributes.FOLLOW_RANGE).getBaseValue();
+				entity.getDistance(entity.getAttackTarget()) < entity.getEntityAttribute(SharedMonsterAttributes.FOLLOW_RANGE).getBaseValue();
 	}
 
 	@Override
@@ -127,7 +127,7 @@ public abstract class EntityHeroAIAttackBase extends EntityAIBase {
 		switch (movementType) {
 		case STRAFING:
 			if (distanceSq <= (double)this.maxAttackDistance/* && this.seeTime >= 20*/) {
-				this.entity.getNavigator().clearPathEntity();
+				this.entity.getNavigator().clearPath();
 				++this.strafingTime;
 			}
 			else {
@@ -156,7 +156,7 @@ public abstract class EntityHeroAIAttackBase extends EntityAIBase {
 			break;
 		case MELEE:
 			if (distanceSq <= (double)this.maxAttackDistance && this.seeTime >= 20) 
-				this.entity.getNavigator().clearPathEntity();
+				this.entity.getNavigator().clearPath();
 			else
 				this.entity.getNavigator().tryMoveToEntityLiving(target, 1);
 			this.entity.getLookHelper().setLookPosition(target.posX, target.posY+target.getEyeHeight(), target.posZ, 360, 360);
@@ -164,7 +164,7 @@ public abstract class EntityHeroAIAttackBase extends EntityAIBase {
 			break;
 		case HEAL:
 			if (distanceSq <= (double)this.maxAttackDistance && canSee) 
-				this.entity.getNavigator().clearPathEntity();
+				this.entity.getNavigator().clearPath();
 			else
 				this.entity.getNavigator().tryMoveToEntityLiving(target, 1);
 			this.entity.lookAtTarget(target, lookYOffset);

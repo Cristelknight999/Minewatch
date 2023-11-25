@@ -102,7 +102,7 @@ public class ItemReinhardtHammer extends ItemMWWeapon {
 						}
 
 					// check for wall impact
-					if (this.entity.isCollidedHorizontally) {
+					if (this.entity.collidedHorizontally) {
 						this.ticksLeft = 1;
 						if (this.entityLiving != null)
 							EntityHelper.attemptDamage(entity, entityLiving, 300, true);
@@ -227,13 +227,13 @@ public class ItemReinhardtHammer extends ItemMWWeapon {
 		public Handler onServerRemove() {
 			for (EntityLivingBase entity : 
 				this.entityLiving.world.getEntitiesWithinAABB(EntityLivingBase.class, this.entityLiving.getEntityBoundingBox().grow(4f))) 
-				if (entity != this.entityLiving && entity != null && this.entityLiving.getDistanceToEntity(entity) <= 5 &&
+				if (entity != this.entityLiving && entity != null && this.entityLiving.getDistance(entity) <= 5 &&
 				EntityHelper.isInFieldOfVision(this.entityLiving, entity, 80)) {
 					if (this.entityLiving.canEntityBeSeen(entity) && EntityHelper.attemptDamage(this.entityLiving, entity, 75, false)) {
 						if (entity instanceof EntityLivingBase) 
-							((EntityLivingBase) entity).knockBack(this.entityLiving, 0.4F, 
-									(double)MathHelper.sin(this.entityLiving.rotationYaw * 0.017453292F), 
-									(double)(-MathHelper.cos(this.entityLiving.rotationYaw * 0.017453292F)));
+							entity.knockBack(this.entityLiving, 0.4F,
+									MathHelper.sin(this.entityLiving.rotationYaw * 0.017453292F),
+									-MathHelper.cos(this.entityLiving.rotationYaw * 0.017453292F));
 						this.entityLiving.getHeldItemMainhand().damageItem(1, this.entityLiving);
 					}
 				}

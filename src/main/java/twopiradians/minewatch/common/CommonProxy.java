@@ -101,23 +101,23 @@ public class CommonProxy {
 		public final boolean onePerEntity;
 		public TextureAtlasSprite sprite;
 
-		private EnumParticle() {
+		EnumParticle() {
 			this(false);
 		}
 
-		private EnumParticle(boolean disableDepth) {
+		EnumParticle(boolean disableDepth) {
 			this(1, 1, 0, disableDepth, false);
 		}
 
-		private EnumParticle(boolean disableDepth, boolean onePerEntity) {
+		EnumParticle(boolean disableDepth, boolean onePerEntity) {
 			this(1, 1, 0, disableDepth, onePerEntity);
 		}
 
-		private EnumParticle(int frames, int variations, float gravity) {
+		EnumParticle(int frames, int variations, float gravity) {
 			this(frames, variations, gravity, false, false);
 		}
 
-		private EnumParticle(int frames, int variations, float gravity, boolean disableDepth, boolean onePerEntity) {
+		EnumParticle(int frames, int variations, float gravity, boolean disableDepth, boolean onePerEntity) {
 			this.loc = new ResourceLocation(Minewatch.MODID, "entity/particle/"+this.name().toLowerCase());
 			this.facingLoc = new ResourceLocation(Minewatch.MODID, "textures/entity/particle/"+this.name().toLowerCase()+".png");
 			this.frames = frames;

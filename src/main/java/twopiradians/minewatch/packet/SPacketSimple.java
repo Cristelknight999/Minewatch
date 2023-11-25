@@ -282,902 +282,900 @@ public class SPacketSimple implements IMessage {
 		@Override
 		public IMessage onMessage(final SPacketSimple packet, final MessageContext ctx) {
 			IThreadListener mainThread = Minecraft.getMinecraft();
-			mainThread.addScheduledTask(new Runnable() {
-				@Override
-				public void run() {
-					EntityPlayerSP player = Minecraft.getMinecraft().player;
-					EntityPlayer packetPlayer = packet.uuid == null ? null : player.world.getPlayerEntityByUUID(packet.uuid);
-					Entity entity = packet.id == -1 ? null : player.world.getEntityByID(packet.id);
-					Entity entity2 = packet.id2 == -1 ? null : player.world.getEntityByID(packet.id2);
+			mainThread.addScheduledTask(() -> {
 
-					// Tracer's dash
-					if (packet.type == 0 && entity != null) {
-						if (entity == player) {
-							player.chasingPosX = player.posX;
-							player.chasingPosY = player.posY;
-							player.chasingPosZ = player.posZ;
-							player.setSneaking(false);
-							move(player, 9, false, true);
-						}
-						TickHandler.register(true, ItemTracerPistol.RECOLOR.setEntity(entity).setTicks(20));
-					}
-					// Reaper's teleport
-					else if (packet.type == 1 && entity instanceof EntityLivingBase) {
-						entity.rotationPitch = 0;
-						TickHandler.register(true, ItemReaperShotgun.TPS.setEntity(entity).setTicks(70).setPosition(new Vec3d(packet.x, packet.y, packet.z)), 
-								Ability.ABILITY_USING.setEntity(entity).setTicks(70).setAbility(EnumHero.REAPER.ability1));
-						Minewatch.proxy.spawnParticlesReaperTeleport(entity.world, (EntityLivingBase) entity, true, 0);
-						Minewatch.proxy.spawnParticlesReaperTeleport(entity.world, (EntityLivingBase) entity, false, 0);
-						if (player == entity)
-							ItemReaperShotgun.tpThirdPersonView.put(player, Minecraft.getMinecraft().gameSettings.thirdPersonView);
-					}
-					// McCree's roll
-					else if (packet.type == 2 && entity instanceof EntityLivingBase) {
-						if (entity == player) {
-							player.onGround = true;
-							player.movementInput.sneak = true;
-						}
-						if (packet.bool) {
-							TickHandler.register(true, ItemMcCreeGun.ROLL.setEntity(entity).setTicks(10),
-									Ability.ABILITY_USING.setEntity(entity).setTicks(10).setAbility(EnumHero.MCCREE.ability2), 
-									RenderManager.SNEAKING.setEntity(entity).setTicks(11));
-						}
-						if (entity == player)
-							move((EntityLivingBase) entity, 0.6d, false, false);
-					}
-					// Genji's strike
-					else if (packet.type == 3 && entity != null) {
-						TickHandler.unregister(true, TickHandler.getHandler(entity, Identifier.GENJI_DEFLECT));
-						TickHandler.register(true, ItemGenjiShuriken.STRIKE.setEntity(entity).setTicks(8),
-								ItemGenjiShuriken.SWORD_CLIENT.setEntity(entity).setTicks(8),
-								Ability.ABILITY_USING.setEntity(entity).setTicks(8).setAbility(EnumHero.GENJI.ability2).setBoolean(true), 
-								RenderManager.SNEAKING.setEntity(entity).setTicks(9));
-						if (entity == player) 
-							move(player, 1.8d, false, true);
-					}
-					// Genji's deflect
-					else if (packet.type == 4 && entity != null) {
-						if (packet.bool)
-							TickHandler.register(true, ItemGenjiShuriken.DEFLECT.setEntity(entity).setTicks((int) packet.x));
-						TickHandler.register(true, ItemGenjiShuriken.SWORD_CLIENT.setEntity(entity).setTicks((int) packet.x));
-						TickHandler.register(true, Ability.ABILITY_USING.setEntity(entity).setTicks((int) packet.x).
-								setAbility(packet.bool ? EnumHero.GENJI.ability1 : null).setBoolean(true));
-					}
-					// Reinhardt's hammer swing
-					else if (packet.type == 5) {
-						Minewatch.proxy.mouseClick();
-					}
-					// Sync playersUsingAlt
-					else if (packet.type == 6 && packetPlayer != null) {
-						ItemStack stack = packetPlayer.getHeldItemMainhand();
-						//ItemMWWeapon.setAlternate(stack, packet.bool);
-						// cause reequip animation if player
-						if (stack != null && stack.getItem() instanceof ItemMWWeapon)
-							((ItemMWWeapon)stack.getItem()).reequipAnimation(stack);
-					}
-					// open display gui
-					else if (packet.type == 7) {
-						Minecraft.getMinecraft().displayGuiScreen(new GuiDisplay((int) packet.x));
-					}
-					// clear Frozen effect
-					else if (packet.type == 8) {
-						player.removePotionEffect(ModPotions.frozen);
-					}
-					// Mei's freeze / Reaper's tp
-					else if (packet.type == 9 && entity instanceof EntityLivingBase) {
-						if (packet.bool) 
-							((EntityLivingBase) entity).addPotionEffect(new PotionEffect(ModPotions.frozen, (int) packet.x, 0, false, true));
-						if (entity == player)
-							TickHandler.register(true, Handlers.PREVENT_INPUT.setEntity(entity).setTicks((int) packet.x),
-									Handlers.PREVENT_MOVEMENT.setEntity(entity).setTicks((int) packet.x), 
-									Handlers.PREVENT_ROTATION.setEntity(entity).setTicks((int) packet.x));
-					}
-					// Reaper's wraith
-					else if (packet.type == 10 && entity != null) {
-						TickHandler.register(true, Ability.ABILITY_USING.setEntity(entity).setTicks(60).setAbility(EnumHero.REAPER.ability2),
-								ItemReaperShotgun.WRAITH.setEntity(entity).setTicks(60), 
-								Handlers.INVULNERABLE.setEntity(entity).setTicks(60),
-								Handlers.VIEW_BOBBING.setEntity(entity).setTicks(60).setBoolean(false));
-					}
-					// wake up from Ana's sleep dart
-					else if (packet.type == 11 && entity != null) {
-						for (Identifier identifier : new Identifier[] {Identifier.ANA_SLEEP, 
-								Identifier.PREVENT_INPUT, Identifier.PREVENT_MOVEMENT, Identifier.PREVENT_ROTATION}) {
-							TickHandler.Handler handler = TickHandler.getHandler(entity, identifier);
-							if (handler != null)
-								handler.ticksLeft = 10;
-						}
-						TickHandler.unregister(true, TickHandler.getHandler(handler->handler.identifier == Identifier.HERO_MESSAGES && handler.string.contains("SLEEP"), true));
-					}
-					// Ana's sleep dart
-					else if (packet.type == 12 && entity != null) {
-						TickHandler.register(true, RenderManager.MESSAGES.setEntity(entity).setTicks(120).setString(TextFormatting.DARK_RED+""+TextFormatting.ITALIC+""+TextFormatting.BOLD+"SLEEP").setNumber(MessageTypes.TOP.ordinal()));
-						TickHandler.register(true, ItemAnaRifle.SLEEP.setEntity(entity).setTicks(120),
-								Handlers.PREVENT_INPUT.setEntity(entity).setTicks(120),
-								Handlers.PREVENT_MOVEMENT.setEntity(entity).setTicks(120),
-								Handlers.PREVENT_ROTATION.setEntity(entity).setTicks(120));
-						if (entity instanceof EntityLivingBase) 
-							Handlers.rotations.put((EntityLivingBase) entity, Triple.of(0f, 0f, 0f));
-					}
-					// Genji's deflect
-					else if (packet.type == 13 && entity != null) {
-						// spawn sweep particle
-						double d0 = (double)(-MathHelper.sin(entity.rotationYaw * 0.017453292F));
-						double d1 = (double)MathHelper.cos(entity.rotationYaw * 0.017453292F);
-						entity.world.spawnParticle(EnumParticleTypes.SWEEP_ATTACK, entity.posX + d0, entity.posY + (double)entity.height * 0.8D, entity.posZ + d1, 0, d0, 0.0D, new int[0]);
-						if (entity == player)
-							TickHandler.register(true, Handlers.ACTIVE_HAND.setEntity(entity).setTicks(5));
-						if (entity2 instanceof IThrowableEntity)
-							((IThrowableEntity)entity2).setThrower(entity);
-						if (entity2 instanceof EntityMW) 
-							((EntityMW)entity2).onDeflect();
-						else if (entity2 instanceof EntityLivingBaseMW)
-							((EntityLivingBaseMW)entity2).onDeflect();
-					}
-					// Kill/assist messages
-					else if (packet.type == 14 && packetPlayer == player && entity != null && 
-							(Config.trackKillsOption == 0 || (Config.trackKillsOption == 1 && entity instanceof EntityPlayer))) {
-						String string = null;
-						String name = EntityHelper.getName(entity);
-						if (packet.x == -1)
-							string = TextFormatting.BOLD + "" + TextFormatting.ITALIC+Minewatch.translate("overlay.eliminated_by").toUpperCase()+" "+
-									TextFormatting.DARK_RED + TextFormatting.BOLD + TextFormatting.ITALIC + TextFormatting.getTextWithoutFormattingCodes(name);
-						else
-							string = TextFormatting.BOLD + "" + TextFormatting.ITALIC+(packet.bool ? Minewatch.translate("overlay.assist").toUpperCase()+" " : Minewatch.translate("overlay.eliminated").toUpperCase()+" ") +
-							TextFormatting.DARK_RED + TextFormatting.BOLD + TextFormatting.ITALIC + TextFormatting.getTextWithoutFormattingCodes(name) +
-							TextFormatting.RESET + TextFormatting.BOLD + TextFormatting.ITALIC + " " + (int)packet.x;
-						TickHandler.register(true, RenderManager.MESSAGES.setEntity(player).
-								setString(new String(string).toUpperCase()).setNumber(MessageTypes.MIDDLE.ordinal()).
-								setTicks(70+TickHandler.getHandlers(player, Identifier.HERO_MESSAGES).size()*1).setBoolean(packet.bool).setAllowDead(true));
-						if (packet.x != -1) {
-							TickHandler.register(true, RenderManager.KILL_OVERLAY.setEntity(player).setTicks(10));
-							ModSoundEvents.KILL.playSound(player, 0.1f, 1, true);
-							if (!(entity instanceof EntityLivingBaseMW)) {
-								TickHandler.Handler handler = TickHandler.getHandler(player, Identifier.HERO_MULTIKILL);
-								if (handler == null)
-									TickHandler.register(true, RenderManager.MULTIKILL.setEntity(player).setTicks(40).setNumber(1));
-								else if (handler.number < 6) {
-									handler.setTicks(40);
-									handler.setNumber(handler.number+1);
-									if (handler.number > 1 && handler.number < 7) {
-										ModSoundEvents.MULTIKILL_2.stopSound(player);
-										ModSoundEvents.MULTIKILL_3.stopSound(player);
-										ModSoundEvents.MULTIKILL_4.stopSound(player);
-										ModSoundEvents.MULTIKILL_5.stopSound(player);
-										ModSoundEvents.MULTIKILL_6.stopSound(player);
-										ModSoundEvents.valueOf("MULTIKILL_"+(int)handler.number).playFollowingSound(player, 1, 1, false);
-									}
-								}
-							}
-						}
+				EntityPlayerSP player = Minecraft.getMinecraft().player;
+				EntityPlayer packetPlayer = packet.uuid == null ? null : player.world.getPlayerEntityByUUID(packet.uuid);
+				Entity entity = packet.id == -1 ? null : player.world.getEntityByID(packet.id);
+				Entity entity2 = packet.id2 == -1 ? null : player.world.getEntityByID(packet.id2);
 
-					}
-					// Damage entity
-					else if (packet.type == 15 && packetPlayer == player) {
-						TickHandler.Handler handler = TickHandler.getHandler(player, Identifier.HIT_OVERLAY);
-						if (handler == null || handler.ticksLeft < 11)
-							TickHandler.register(true, RenderManager.HIT_OVERLAY.setEntity(player).setTicks(10).setNumber(packet.x));
-						else 
-							handler.setNumber(handler.number + packet.x/3d).setTicks(10);
-						// play damage sound
-						ModSoundEvents.HURT.playSound(player, (float) MathHelper.clamp(packet.x/18f, 0.1f, 0.4f), 1.0f, true);
-					}
-					// Interrupt
-					else if (packet.type == 16 && entity != null) {
-						TickHandler.interrupt(entity);
-					}
-					// sync config
-					else if (packet.type == 17) {
-						Minewatch.network.sendToServer(new PacketSyncConfig());
-					}
-					// add opped button to tab
-					else if (packet.type == 18) {
-						GuiTab.addOppedButtons();
-					}
-					// Mercy's Angel
-					else if (packet.type == 19 && entity != null) { 
-						if (packet.bool)
-							ModSoundEvents.MERCY_ANGEL_VOICE.playFollowingSound(entity, 1, 1, false);
-						ModSoundEvents.MERCY_ANGEL.playFollowingSound(entity, 1, 1, false);
-						TickHandler.register(true, ItemMercyWeapon.ANGEL.setEntity(entity).setPosition(new Vec3d(packet.x, packet.y, packet.z)).setTicks(75),
-								Ability.ABILITY_USING.setTicks(75).setEntity(entity).setAbility(EnumHero.MERCY.ability3));
-					}
-					// Junkrat's grenade bounce
-					else if (packet.type == 20 && entity instanceof EntityJunkratGrenade) {
-						// direct hit
-						if (packet.bool && entity2 instanceof Entity) {
-							((EntityJunkratGrenade)entity).explode(null);
-							ModSoundEvents.JUNKRAT_GRENADE_EXPLODE.playSound(entity, 1, 1);
-						}
-						// bounce
-						else {
-							((EntityJunkratGrenade)entity).bounces = (int) packet.x;
-							if (packet.x == 0) 
-								ModSoundEvents.JUNKRAT_GRENADE_TICK_0.playFollowingSound(entity, 1, 1, true);
-							else if (packet.x == 1) 
-								ModSoundEvents.JUNKRAT_GRENADE_TICK_1.playFollowingSound(entity, 1, 1, true);
-							else if (packet.x == 2) 
-								ModSoundEvents.JUNKRAT_GRENADE_TICK_2.playFollowingSound(entity, 1, 1, true);
-							else
-								ModSoundEvents.JUNKRAT_GRENADE_TICK_3.playSound(entity, 1, 1);
-							Minewatch.proxy.spawnParticlesCustom(EnumParticle.SPARK, entity.world, entity.posX, entity.posY, entity.posZ,
-									0, 0, 0, 0xFCCD75, 0xFFDA93, 0.7f, 2, 3, 2.5f, entity.world.rand.nextFloat(), 0.01f);
-							ModSoundEvents.JUNKRAT_GRENADE_BOUNCE.playSound(entity, 0.7f, 1);
-						}
-					}
-					// Shoot Ana's sleep dart
-					else if (packet.type == 21 && packetPlayer == player && player != null) {
-						TickHandler.register(true, Ability.ABILITY_USING.setEntity(player).setTicks((int)packet.x).setAbility(EnumHero.ANA.ability2));
-					}
-					// Unused
-					else if (packet.type == 22 && packetPlayer != null) {}
-					// Frozen particles
-					else if (packet.type == 23 && entity != null) {
-						for (int i=0; i<3; ++i)
-							Minewatch.proxy.spawnParticlesCustom(EnumParticle.CIRCLE, entity.world, 
-									packet.x+entity.world.rand.nextDouble()-0.5d, 
-									packet.y+entity.world.rand.nextDouble()-0.5d, 
-									packet.z+entity.world.rand.nextDouble()-0.5d, 
-									0, 0.01f, 0, 0x5BC8E0, 0xAED4FF,
-									entity.world.rand.nextFloat(), 5, 20f, 25f, 0, 0);
-					}
-					// Junkrat death grenades
-					else if (packet.type == 24 && entity instanceof EntityJunkratGrenade) {
-						((EntityJunkratGrenade)entity).explodeTimer = (int) packet.x;
-						((EntityJunkratGrenade)entity).isDeathGrenade = true;
-					}
-					// Junkrat trap
-					else if (packet.type == 25 && entity instanceof EntityJunkratTrap && entity2 instanceof EntityLivingBase) {
-						if (packet.bool) {
-							TickHandler.register(true, RenderManager.MESSAGES.setEntity(entity2).setTicks(70).setString(TextFormatting.DARK_RED+""+TextFormatting.ITALIC+""+TextFormatting.BOLD+"TRAPPED").setNumber(MessageTypes.TOP.ordinal()));
-							((EntityJunkratTrap)entity).trappedEntity = (EntityLivingBase) entity2;
-							TickHandler.register(true, Handlers.PREVENT_MOVEMENT.setTicks(70).setEntity(entity2),
-									EntityJunkratTrap.TRAPPED.setTicks(70).setEntity(entity2));
-							if (((EntityJunkratTrap)entity).getThrower() == player) {
-								ModSoundEvents.JUNKRAT_TRAP_PLACED_VOICE.stopSound(player);
-								ModSoundEvents.JUNKRAT_TRAP_TRIGGER_OWNER.playFollowingSound(player, 1, 1, false);
-								ModSoundEvents.JUNKRAT_TRAP_TRIGGER_VOICE.playFollowingSound(player, 1, 1, false);
-							}
-						}
-						if (packetPlayer == player && player != null)
-							Minewatch.proxy.spawnParticlesCustom(EnumParticle.JUNKRAT_TRAP_TRIGGERED, player.world, entity.posX, entity.posY+1.5d, entity.posZ, 0, 0, 0, 0xFFFFFF, 0xFFFFFF, 1, 80, 5, 5, 0, 0);
-					}
-					// Junkrat trap destroyed
-					else if (packet.type == 26 && entity instanceof EntityJunkratTrap) {
-						if (packet.bool)
-							for (int i=0; i<30; ++i)
-								entity.world.spawnParticle(EnumParticleTypes.EXPLOSION_NORMAL, 
-										entity.posX+(entity.world.rand.nextDouble()-0.5d)*1d, entity.posY+entity.world.rand.nextDouble()*1d, entity.posZ+(entity.world.rand.nextDouble()-0.5d)*1d, 0, 0, 0, new int[0]);
-						else
-							TickHandler.unregister(true, 
-									TickHandler.getHandler(((EntityJunkratTrap)entity).trappedEntity, Identifier.PREVENT_MOVEMENT),
-									TickHandler.getHandler(((EntityJunkratTrap)entity).trappedEntity, Identifier.JUNKRAT_TRAP));
-						entity.setDead();
-					}
-					// Sombra's invisibility
-					else if (packet.type == 27 && entity != null) {
-						if (packet.bool) {
-							TickHandler.register(true, ItemSombraMachinePistol.INVISIBLE.setEntity(entity).setTicks(130),
-									Ability.ABILITY_USING.setEntity(entity).setTicks(120).setAbility(EnumHero.SOMBRA.ability3));
-							if (entity == player) {
-								Minewatch.proxy.updateFOV();
-								ModSoundEvents.SOMBRA_INVISIBLE_START.playFollowingSound(entity, 1, 1, false);
-							}
-						}
-						else if (entity instanceof EntityLivingBase)
-							ItemSombraMachinePistol.cancelInvisibility((EntityLivingBase) entity);
-					}
-					// Widowmaker's venom trap
-					else if (packet.type == 28 && entity != null && entity2 instanceof EntityLivingBase) {
-						TickHandler.register(true, EntityWidowmakerMine.POISONED.setTicks(100).setEntity(entity).setEntityLiving((EntityLivingBase) entity2));
-						if (entity2 == player && player != null) 
-							Minewatch.proxy.spawnParticlesCustom(EnumParticle.WIDOWMAKER_MINE_TRIGGERED, entity2.world, packet.x, packet.y+1, packet.z, 0, 0, 0, 0xFFFFFF, 0xFFFFFF, 1, 80, 5, 5, 0, 0);
-					}
-					// Sombra's teleport
-					else if (packet.type == 29 && entity != null) {
-						TickHandler.register(true, ItemSombraMachinePistol.TELEPORT.setEntity(entity).setTicks(10).
-								setPosition(new Vec3d(packet.x, packet.y, packet.z)));
-					}
-					// Junkrat's mine explosion
-					else if (packet.type == 30 && entity instanceof EntityJunkratMine) {
-						((EntityJunkratMine)entity).explode();
-					}
-					// Bastion's reconfigure
-					else if (packet.type == 31 && entity instanceof EntityLivingBase) {
-						ItemMWWeapon.setAlternate(((EntityLivingBase)entity).getHeldItemMainhand(), packet.bool);
-						if (packet.bool) {
-							TickHandler.register(true, ItemBastionGun.TURRET.setEntity(entity).setTicks(10));
-							ModSoundEvents.BASTION_RECONFIGURE_1.playFollowingSound(entity, 1, 1, false);
-						}
-						else
-							ModSoundEvents.BASTION_RECONFIGURE_0.playFollowingSound(entity, 1, 1, false);
-					}
-					// Mei's cryo-freeze
-					else if (packet.type == 32 && entity != null) {
-						if (packet.bool) {
-							if (entity == player) {
-								ItemMeiBlaster.thirdPersonView = Minecraft.getMinecraft().gameSettings.thirdPersonView;
-								TickHandler.register(true, Ability.ABILITY_USING.setEntity(entity).setTicks(80).setAbility(EnumHero.MEI.ability2));
-							}
-							TickHandler.register(true, ItemMeiBlaster.CRYSTAL.setEntity(entity).setTicks(80),
-									Handlers.PREVENT_MOVEMENT.setEntity(entity).setTicks(80),
-									Handlers.PREVENT_INPUT.setEntity(entity).setTicks(80),
-									Handlers.PREVENT_ROTATION.setEntity(entity).setTicks(80));
-							ModSoundEvents.MEI_CRYSTAL_START.playFollowingSound(entity, 1, 1, false);
-						}
-						else 
-							TickHandler.unregister(true, TickHandler.getHandler(entity, Identifier.MEI_CRYSTAL),
-									TickHandler.getHandler(entity, Identifier.PREVENT_MOVEMENT),
-									TickHandler.getHandler(entity, Identifier.PREVENT_INPUT),
-									TickHandler.getHandler(entity, Identifier.PREVENT_ROTATION),
-									TickHandler.getHandler(entity, Identifier.ABILITY_USING));
-					}
-					// Reinhardt's fire strike
-					else if (packet.type == 33 && entity != null) {
-						TickHandler.register(true, ItemReinhardtHammer.STRIKE.setEntity(entity).setTicks(13));
-						if (entity == player)
-							TickHandler.register(true, Ability.ABILITY_USING.setEntity(player).setTicks(13).setAbility(EnumHero.REINHARDT.ability2));
-						ModSoundEvents.REINHARDT_STRIKE_THROW.playFollowingSound(entity, 1, 1, false);
-					}
-					// Set entity's position
-					else if (packet.type == 34 && entity != null) {
-						entity.setPosition(packet.x, packet.y, packet.z);
-					}
-					// Sombra's translocator
-					else if (packet.type == 35 && entity instanceof EntityLivingBase && entity2 != null) {
-						TickHandler.register(true, Ability.ABILITY_USING.setAbility(EnumHero.SOMBRA.ability2).setTicks(10).setEntity(entity));
-						if (EnumHero.SOMBRA.ability2.entities.get(entity) == null || 
-								EnumHero.SOMBRA.ability2.entities.get(entity).getEntityId() != entity2.getEntityId())
-							EnumHero.SOMBRA.ability2.entities.put((EntityLivingBase) entity, entity2);
-					}
-					// EntityHero item cooldown handler
-					else if (packet.type == 36 && entity instanceof EntityHero) {
-						ItemStack main = ((EntityHero)entity).getHeldItemMainhand();
-						ItemStack off = ((EntityHero)entity).getHeldItemOffhand();
-						if (main != null && main.getItem() instanceof ItemMWWeapon)
-							((ItemMWWeapon)main.getItem()).setCooldown(entity, (int) packet.x);
-						else if (off != null && off.getItem() instanceof ItemMWWeapon)
-							((ItemMWWeapon)off.getItem()).setCooldown(entity, (int) packet.x);
-					}
-					// Lucio's amp
-					else if (packet.type == 37) {
-						TickHandler.register(true, 
-								Ability.ABILITY_USING.setEntity(player).setTicks(60).setAbility(EnumHero.LUCIO.ability2));
-					}
-					// Lucio's soundwave
-					else if (packet.type == 38 && entity instanceof EntityLivingBase) {
-						Minewatch.proxy.spawnParticlesMuzzle(EnumParticle.CIRCLE, entity.world, (EntityLivingBase) entity, 
-								0xE2EA7D, 0xABBF78, 1, 13, 1, 10, 0, 0, EnumHand.MAIN_HAND, 17, 0.65f);
-						Minewatch.proxy.spawnParticlesMuzzle(EnumParticle.CIRCLE, entity.world, (EntityLivingBase) entity, 
-								0xE2EA7D, 0xABBF78, 0.9f, 13, 6, 10, 0, 0, EnumHand.MAIN_HAND, 17, 0.65f);
-						Minewatch.proxy.spawnParticlesMuzzle(EnumParticle.HOLLOW_CIRCLE, entity.world, (EntityLivingBase) entity, 
-								0xDFED8B, 0xABBF78, 0.7f, 15, 5+(entity.world.rand.nextFloat()-0.5f)*2f, 7+(entity.world.rand.nextFloat()-0.5f)*2f, entity.world.rand.nextFloat(), entity.world.rand.nextFloat()/10f, EnumHand.MAIN_HAND, 17, 0.65f);
-						Minewatch.proxy.spawnParticlesMuzzle(EnumParticle.HOLLOW_CIRCLE, entity.world, (EntityLivingBase) entity, 
-								0xDFED8B, 0xABBF78, 0.7f, 14, 2+(entity.world.rand.nextFloat()-0.5f)*2f, 6+(entity.world.rand.nextFloat()-0.5f)*2f, entity.world.rand.nextFloat(), entity.world.rand.nextFloat()/10f, EnumHand.MAIN_HAND, 17, 0.65f);
-						Minewatch.proxy.spawnParticlesMuzzle(EnumParticle.HOLLOW_CIRCLE, entity.world, (EntityLivingBase) entity, 
-								0xDFED8B, 0xABBF78, 0.7f, 13, 3+(entity.world.rand.nextFloat()-0.5f)*2f, 6+(entity.world.rand.nextFloat()-0.5f)*2f, entity.world.rand.nextFloat(), entity.world.rand.nextFloat()/10f, EnumHand.MAIN_HAND, 17, 0.65f);
-						ItemLucioSoundAmplifier.soundwave((EntityLivingBase) entity, entity.motionX, entity.motionY, entity.motionZ);							
-						ModSoundEvents.LUCIO_SOUNDWAVE.playFollowingSound(entity, 1, 1, false);
-					}
-					// Lucio's soundwave (player causing it)
-					else if (packet.type == 39 && packetPlayer != null) {
-						Minewatch.network.sendToServer(new CPacketSimple(4, false, packetPlayer, packetPlayer.motionX, packetPlayer.motionY, packetPlayer.motionZ));
-					}
-					// Hurt sound for Mercy's power beam
-					else if (packet.type == 40 && entity != null) {
-						ModSoundEvents.HURT.playSound(entity, 0.3f, entity.world.rand.nextFloat()/2+0.75f, true);
-					}
-					// Entity collision raytraceresult onImpact
-					else if (packet.type == 41 && entity instanceof EntityMW) {
-						if (packet.bool)
-							entity.setDead();
-						entity.setPosition(packet.x3, packet.y3, packet.z3);
-						if (entity.ticksExisted == 0) {
-							entity.prevPosX = packet.x4;
-							entity.prevPosY = packet.y4;
-							entity.prevPosZ = packet.z4;
-						}
-						Vec3d hitVec = new Vec3d(packet.x, packet.y, packet.z);
-						RayTraceResult.Type typeOfHit = packet.x2 >= 0 && packet.x2 < RayTraceResult.Type.values().length ? 
-								RayTraceResult.Type.values()[(int) packet.x2] : null;
-								EnumFacing sideHit = packet.y2 >= 0 && packet.y2 < EnumFacing.values().length ? 
-										EnumFacing.values()[(int) packet.y2] : null;
-										if (typeOfHit == RayTraceResult.Type.BLOCK && sideHit != null)
-											((EntityMW)entity).onImpact(new RayTraceResult(hitVec, sideHit, new BlockPos(hitVec)));
-										else if (typeOfHit == RayTraceResult.Type.ENTITY && entity2 != null)
-											((EntityMW)entity).onImpact(new RayTraceResult(entity2, hitVec));
-					}
-					// Zenyatta's Harmony (entity is zen, entity2 is target)
-					else if (packet.type == 42 && entity != null && entity2 instanceof EntityLivingBase) {
-						// refresh / start
-						if (packet.bool) {
-							// remove discord by same player
-							TickHandler.Handler discord = TickHandler.getHandler(entity, Identifier.ZENYATTA_DISCORD);
-							if (discord != null && discord.entityLiving == entity2)
-								TickHandler.unregister(false, discord);
-							// apply harmony
-							TickHandler.Handler handler = TickHandler.getHandler(entity, Identifier.ZENYATTA_HARMONY);
-							if (handler != null) 
-								handler.setTicks(60).setEntityLiving((EntityLivingBase) entity2);
-							else {
-								TickHandler.register(true, RenderManager.MESSAGES.setEntity(entity2).setTicks(100).setString(TextFormatting.AQUA+""+TextFormatting.BOLD+"HARMONY ORB"+TextFormatting.WHITE+""+TextFormatting.BOLD+" GAINED FROM "+TextFormatting.AQUA+""+TextFormatting.BOLD+EntityHelper.getName(entity).toUpperCase()).setNumber(MessageTypes.MIDDLE.ordinal()));
-								TickHandler.register(true, ItemZenyattaWeapon.HARMONY.setTicks(60).setEntity(entity).setEntityLiving((EntityLivingBase) entity2));
-								Minewatch.proxy.spawnParticlesCustom(EnumParticle.ZENYATTA_HARMONY_ORB, entity.world, entity2, 0xFFFFFF, 0xFFFFFF, 1.0f, Integer.MAX_VALUE, 3, 3, 0, 0);
-								if (entity == player && EntityHelper.isHoldingItem(player, ItemZenyattaWeapon.class, EnumHand.MAIN_HAND)) {
-									ItemZenyattaWeapon.animatingHarmony = player.getHeldItemMainhand();
-									ItemZenyattaWeapon.animatingDiscord = null;
-									ItemZenyattaWeapon.animatingTime = player.ticksExisted + ItemZenyattaWeapon.ANIMATION_TIME;
-								}
-							}
-							if (entity == player) {
-								EnumHero.ZENYATTA.ability1.entities.put((EntityLivingBase) entity, entity2);
-								Minewatch.proxy.spawnParticlesCustom(EnumParticle.ZENYATTA_HARMONY, entity.world, entity2, 0xFFFFFF, 0xFFFFFF, 1.0f, Integer.MAX_VALUE, 1, 1, 0, 0);
-							}
-						}
-						// end
-						else {
-							EnumHero.ZENYATTA.ability1.entities.remove(entity);
-							TickHandler.Handler handler = TickHandler.getHandler(entity, Identifier.ZENYATTA_HARMONY);
-							if (handler != null) {
-								TickHandler.unregister(true, handler);
-								if (entity == player/* && packet.x <= 0*/) {
-									ModSoundEvents.ZENYATTA_HEAL_RETURN.playFollowingSound(entity, 1.0f, 1.0f, false);
-									TickHandler.register(true, RenderManager.MESSAGES.setEntity(entity).setTicks(100).setString(TextFormatting.AQUA+""+TextFormatting.BOLD+"HARMONY ORB"+TextFormatting.WHITE+""+TextFormatting.BOLD+" RETURNED").setNumber(MessageTypes.MIDDLE.ordinal()));
-								}
-							}
-						}
-					}
-					// Zenyatta's Discord (entity is zen, entity2 is target)
-					else if (packet.type == 43 && entity instanceof EntityLivingBase && entity2 instanceof EntityLivingBase) {
-						// refresh / start
-						if (packet.bool) {
-							// remove harmony by same player
-							TickHandler.Handler harmony = TickHandler.getHandler(entity, Identifier.ZENYATTA_HARMONY);
-							if (harmony != null && harmony.entityLiving == entity2)
-								TickHandler.unregister(false, harmony);
-							// apply discord
-							TickHandler.Handler handler = TickHandler.getHandler(entity, Identifier.ZENYATTA_DISCORD);
-							if (handler != null) 
-								handler.setTicks(60).setEntityLiving((EntityLivingBase) entity2);
-							else {
-								TickHandler.register(true, RenderManager.MESSAGES.setEntity(entity2).setTicks(100).setString(TextFormatting.DARK_RED+""+TextFormatting.BOLD+"DISCORD ORB"+TextFormatting.WHITE+""+TextFormatting.BOLD+" GAINED FROM "+TextFormatting.DARK_RED+""+TextFormatting.BOLD+EntityHelper.getName(entity).toUpperCase()).setNumber(MessageTypes.MIDDLE.ordinal()));
-								TickHandler.register(true, ItemZenyattaWeapon.DISCORD.setTicks(60).setEntity(entity).setEntityLiving((EntityLivingBase) entity2));
-								Minewatch.proxy.spawnParticlesCustom(EnumParticle.ZENYATTA_DISCORD_ORB, entity.world, entity2, 0xFFFFFF, 0xFFFFFF, 1.0f, Integer.MAX_VALUE, 3, 3, 0, 0);
-								if (entity == player && EntityHelper.isHoldingItem(player, ItemZenyattaWeapon.class, EnumHand.OFF_HAND)) {
-									ItemZenyattaWeapon.animatingDiscord = player.getHeldItemOffhand();
-									ItemZenyattaWeapon.animatingHarmony = null;
-									ItemZenyattaWeapon.animatingTime = player.ticksExisted + ItemZenyattaWeapon.ANIMATION_TIME;
-								}							
-							}
-							if (entity == player) {
-								EnumHero.ZENYATTA.ability2.entities.put((EntityLivingBase) entity, entity2);
-								Minewatch.proxy.spawnParticlesCustom(EnumParticle.ZENYATTA_DISCORD, entity.world, entity2, 0xFFFFFF, 0xFFFFFF, 1.0f, Integer.MAX_VALUE, 1, 1, 0, 0);
-							}
-						}
-						// end
-						else {
-							EnumHero.ZENYATTA.ability2.entities.remove(entity);
-							TickHandler.Handler handler = TickHandler.getHandler(entity, Identifier.ZENYATTA_DISCORD);
-							if (handler != null) {
-								TickHandler.unregister(true, handler);
-								if (entity == player/* && packet.x <= 0*/) {
-									ModSoundEvents.ZENYATTA_DAMAGE_RETURN.playFollowingSound(entity, 1.0f, 1.0f, false);
-									TickHandler.register(true, RenderManager.MESSAGES.setEntity(entity).setTicks(100).setString(TextFormatting.DARK_RED+""+TextFormatting.BOLD+"DISCORD ORB"+TextFormatting.WHITE+""+TextFormatting.BOLD+" RETURNED").setNumber(MessageTypes.MIDDLE.ordinal()));
-								}
-							}
-						}
-					}
-					// health plus particles
-					else if (packet.type == 44 && entity != null) {
-						EntityHelper.spawnHealParticles(entity, packet.bool);
-					}
-
-					// Team Selector send message
-					else if (packet.type == 45 && packet.string != null) {
-						ITextComponent component = new TextComponentString(TextFormatting.GREEN+"[Team Stick] "+TextFormatting.RESET+packet.string);
-						Minecraft.getMinecraft().ingameGUI.getChatGUI().printChatMessageWithOptionalDeletion(component, 92);
-					}
-					// sync weapon charge
-					else if (packet.type == 46) {
-						EnumHero hero = SetManager.getWornSet(player);
-						if (hero != null)
-							ChargeManager.setCurrentCharge(player, (float) packet.x, false);
-					}
-					// Moira's Fade
-					else if (packet.type == 47 && entity != null) {
-						TickHandler.register(true, Ability.ABILITY_USING.setEntity(entity).setTicks(16).setAbility(EnumHero.MOIRA.ability3),
-								ItemMoiraWeapon.FADE.setEntity(entity).setTicks(16), Handlers.INVULNERABLE.setEntity(entity).setTicks(16));
-						TickHandler.unregister(true, TickHandler.getHandler(entity, Identifier.MOIRA_DAMAGE));
-						if (player == entity)
-							ItemMoiraWeapon.fadeViewBobbing.put(player, Minecraft.getMinecraft().gameSettings.viewBobbing);
-					}
-					// Moira's damage
-					else if (packet.type == 48 && entity != null) {
-						if (packet.bool)
-							TickHandler.register(true, ItemMoiraWeapon.DAMAGE.setEntity(entity).setEntityLiving(entity2 instanceof EntityLivingBase ? (EntityLivingBase) entity2 : null).setTicks(10));
-						else
-							TickHandler.unregister(true, TickHandler.getHandler(entity, Identifier.MOIRA_DAMAGE));
-					}
-					// Moira's orb select
-					else if (packet.type == 49 && entity != null) {
-						if (packet.bool) {
-							TickHandler.register(true, ItemMoiraWeapon.ORB_SELECT.setEntity(entity).setTicks(12000));
-							Minewatch.proxy.spawnParticlesCustom(EnumParticle.MOIRA_ORB, entity.world, entity, 0xFF50FF, 0xFF50FF, 0.99f, 12000, 2, 2, 0, 0.05f);
-							Minewatch.proxy.spawnParticlesCustom(EnumParticle.MOIRA_ORB, entity.world, entity, 0xFBF235, 0xFBF235, 1, 12000, 2, 2, 0, -0.05f);
-							Minewatch.proxy.spawnParticlesCustom(EnumParticle.MOIRA_ORB, entity.world, entity, 0x251A60, 0x251A60, 0.99f, 12000, 2, 2, 0, 0.05f);
-							Minewatch.proxy.spawnParticlesCustom(EnumParticle.MOIRA_ORB, entity.world, entity, 0xFBF235, 0xFBF235, 1, 12000, 2, 2, 0, -0.05f);
-						}
-						else
-							TickHandler.unregister(true, TickHandler.getHandler(entity, Identifier.MOIRA_ORB_SELECT));
-					}
-					// Select hero voice line
-					else if (packet.type == 50 && packetPlayer == player && packet.x >= 0 && packet.x < EnumHero.values().length) {
-						EnumHero hero = EnumHero.values()[(int) packet.x];
-						if (hero != null && hero.selectSound != null)
-							hero.selectSound.playFollowingSound(player, 0.5f, 1.0f, false);
-					}
-					// McCree's fan the hammer
-					else if (packet.type == 51 && entity != null) {
-						if (packet.bool)
-							TickHandler.register(true, ItemMcCreeGun.FAN.setEntity(entity).setTicks(5));
-						else
-							TickHandler.unregister(true, TickHandler.getHandler(entity, Identifier.MCCREE_FAN));
-					}
-					// McCree's flashbang
-					else if (packet.type == 52 && entity != null) {
-						TickHandler.register(true, RenderManager.MESSAGES.setEntity(entity2).setTicks(17).setString(TextFormatting.DARK_RED+""+TextFormatting.ITALIC+""+TextFormatting.BOLD+"STUNNED").setNumber(MessageTypes.TOP.ordinal()));
-						float size = Math.min(entity.height, entity.width)*9f;
-						Minewatch.proxy.spawnParticlesCustom(EnumParticle.STUN, entity.world, entity, 0xFFFFFF, 0xFFFFFF, 0.9f, 14, size, size, 0, 0);
-						TickHandler.register(true, Handlers.PREVENT_INPUT.setEntity(entity).setTicks(17),
-								Handlers.PREVENT_MOVEMENT.setEntity(entity).setTicks(17),
-								Handlers.PREVENT_ROTATION.setEntity(entity).setTicks(17));
-					}
-					// Ana's grenade
-					else if (packet.type == 53 && entity != null) {
-						if (packet.bool) {
-							TickHandler.register(true, EntityAnaGrenade.HEAL.setEntity(entity).setTicks(80));
-							if (entity == player)
-								ModSoundEvents.ANA_GRENADE_HEAL.playFollowingSound(entity, 0.2f, 1, false);
-						}
-						else {
-							TickHandler.register(true, EntityAnaGrenade.DAMAGE.setEntity(entity).setTicks(80).setNumber(packet.x));
-							if (entity == player)
-								ModSoundEvents.ANA_GRENADE_DAMAGE.playFollowingSound(entity, 1, 1, false);
-						}
-					}
-					// Tracer's recall
-					else if (packet.type == 54 && entity instanceof EntityLivingBase) {
-						Minewatch.proxy.spawnParticlesCustom(EnumParticle.HOLLOW_CIRCLE_3, entity.world, entity.posX, entity.posY+entity.height/2f, entity.posZ, 0, 0, 0, 0x63B8E8, 0x4478AD, 1, 7, 20, 0, 0, 0.5f);
-						Minewatch.proxy.spawnParticlesCustom(EnumParticle.HOLLOW_CIRCLE_2, entity.world, entity.posX, entity.posY+entity.height/2f, entity.posZ, 0, 0, 0, 0x63B8E8, 0x4478AD, 1, 7, 20, 0, 0, 0.5f);
-						Minewatch.proxy.spawnParticlesCustom(EnumParticle.SPARK, entity.world, entity.posX, entity.posY+entity.height/2f, entity.posZ, 0, 0, 0, 0x63B8E8, 0x63B8E8, 1, 7, 15, 5, 0, 0.5f);
-						Minewatch.proxy.spawnParticlesCustom(EnumParticle.SPARK, entity.world, entity.posX, entity.posY+entity.height/2f, entity.posZ, 0, 0, 0, 0xD2FFFF, 0xEAFFFF, 1, 7, 10, 5, 0, 0.8f);
-						Minewatch.proxy.spawnParticlesCustom(EnumParticle.SPARK, entity.world, entity.posX, entity.posY+entity.height/2f, entity.posZ, 0, 0, 0, 0xD2FFFF, 0xEAFFFF, 1, 15, 0, 10, 0, 0.1f);
-						((EntityLivingBase)entity).addPotionEffect(new PotionEffect(MobEffects.INVISIBILITY, 30, 0, false, false));
-						entity.extinguish();
-						TickHandler.unregister(true, TickHandler.getHandler(entity, Identifier.ANA_GRENADE_DAMAGE));
-						TickHandler.register(true, ItemTracerPistol.RECALL.setEntity(entity).setTicks(35), 
-								Handlers.PREVENT_INPUT.setEntity(entity).setTicks(30),
-								Handlers.PREVENT_MOVEMENT.setEntity(entity).setTicks(30),
-								Ability.ABILITY_USING.setEntity(entity).setTicks(30).setAbility(EnumHero.TRACER.ability1),
-								Handlers.INVULNERABLE.setEntity(entity).setTicks(30));		
-					}
-					// Widowmaker's hook
-					else if (packet.type == 55 && entity instanceof EntityLivingBase && entity2 instanceof EntityWidowmakerHook) {
-						TickHandler.register(true, ItemWidowmakerRifle.HOOK.setEntity(entity2).setEntityLiving((EntityLivingBase) entity).setTicks(100),
-								Ability.ABILITY_USING.setEntity(entity).setTicks(100).setAbility(EnumHero.WIDOWMAKER.ability2));
-					}
-					// Reinhardt's charge
-					else if (packet.type == 56 && entity instanceof EntityLivingBase) {
-						TickHandler.Handler handler = TickHandler.getHandler(entity, Identifier.REINHARDT_CHARGE);
-						// register charge / updated pinned entity
-						if (packet.bool && (entity2 == null || entity2 instanceof EntityLivingBase)) {
-							if (handler == null) {
-								((EntityLivingBase)entity).rotationYaw = (float) packet.x;
-								ModSoundEvents.REINHARDT_CHARGE.playFollowingSound(entity, 1, 1, false);
-								TickHandler.register(true, ItemReinhardtHammer.CHARGE.setEntity(entity).setEntityLiving((EntityLivingBase) entity2).setTicks(80),
-										Handlers.ACTIVE_HAND.setEntity(entity).setTicks(80),
-										Handlers.PREVENT_ROTATION.setEntity(entity).setTicks(80), 
-										Handlers.PREVENT_MOVEMENT.setEntity(entity).setTicks(80).setBoolean(true),
-										RenderManager.SNEAKING.setEntity(entity).setTicks(80));
-								if (entity == player)
-									TickHandler.register(true, Ability.ABILITY_USING.setEntity(entity).setTicks(80).setAbility(EnumHero.REINHARDT.ability3),
-											Handlers.FORCE_VIEW.setEntity(entity).setTicks(80).setNumber(3));
-							}
-							else {
-								TickHandler.interrupt(entity2);
-								handler.entityLiving = (EntityLivingBase) entity2;
-								handler.entityLiving.rotationPitch = 0;
-								handler.entityLiving.rotationYaw = MathHelper.wrapDegrees(entity.rotationYaw+180f);
-								handler.entityLiving.prevRotationYaw = handler.entityLiving.rotationYaw;
-								handler.entityLiving.prevRotationPitch = handler.entityLiving.rotationPitch;
-								TickHandler.register(true, Handlers.PREVENT_INPUT.setEntity(entity2).setTicks(handler.ticksLeft),
-										Handlers.PREVENT_ROTATION.setEntity(entity2).setTicks(handler.ticksLeft), 
-										Handlers.PREVENT_MOVEMENT.setEntity(entity2).setTicks(handler.ticksLeft),
-										Handlers.FORCE_VIEW.setEntity(entity2).setTicks(handler.ticksLeft).setNumber(3),
-										RenderManager.MESSAGES.setEntity(entity2).setTicks(handler.ticksLeft).setString(TextFormatting.DARK_RED+""+TextFormatting.ITALIC+""+TextFormatting.BOLD+"PINNED").setNumber(MessageTypes.TOP.ordinal()));
-								TickHandler.register(true, RenderManager.MESSAGES.setEntity(entity).setTicks(handler.ticksLeft).setString(TextFormatting.AQUA+""+TextFormatting.ITALIC+""+TextFormatting.BOLD+"PINNED").setNumber(MessageTypes.TOP.ordinal()));
-							}
-						}
-						// unregister charge
-						else if (!packet.bool) {
-							// stop sound
-							ModSoundEvents.REINHARDT_CHARGE.stopFollowingSound(entity);
-							// spawn particle
-							RayTraceResult result = EntityHelper.getMouseOverBlock((EntityLivingBase) entity, 3, 0, entity.getRotationYawHead());
-							if (result != null) {
-								double x = result.hitVec.x; 
-								double y = result.hitVec.y;
-								double z = result.hitVec.z;
-								if (result.sideHit == EnumFacing.SOUTH)
-									z = Math.ceil(z);
-								else if (result.sideHit == EnumFacing.EAST)
-									x = Math.ceil(x);
-								else if (result.sideHit == EnumFacing.UP)
-									y = Math.ceil(y);
-								Vec3d pos = new Vec3d(x, y, z);
-								Minewatch.proxy.spawnParticlesCustom(EnumParticle.REINHARDT_CHARGE, entity.world, pos.x, pos.y, pos.z, 0, 0, 0, 0xFFFFFF, 0xFFFFFF, 1.0f, 300, 10, 9, entity.world.rand.nextFloat(), 0, result.sideHit, true);
-							}
-							// unregister
-							TickHandler.unregister(true, handler, TickHandler.getHandler(entity, Identifier.ACTIVE_HAND),
-									TickHandler.getHandler(entity, Identifier.PREVENT_ROTATION),
-									TickHandler.getHandler(entity, Identifier.PREVENT_MOVEMENT),
-									TickHandler.getHandler(entity, Identifier.HERO_SNEAKING));
-							if (entity2 != null) {
-								TickHandler.unregister(true, TickHandler.getHandler(entity2, Identifier.PREVENT_INPUT),
-										TickHandler.getHandler(entity2, Identifier.PREVENT_ROTATION),
-										TickHandler.getHandler(entity2, Identifier.PREVENT_MOVEMENT),
-										TickHandler.getHandler(entity2, Identifier.FORCE_VIEW));
-								if (entity2 == player)
-									Minewatch.proxy.updateFOV();
-							}
-							if (entity == player)
-								TickHandler.unregister(true, TickHandler.getHandler(entity, Identifier.ABILITY_USING),
-										TickHandler.getHandler(entity, Identifier.FORCE_VIEW));
-						}
-					}
-					// stop following sound
-					else if (packet.type == 57 && entity != null && packet.string != null) {
-						Minewatch.proxy.stopFollowingSound(entity, packet.string);
-					}
-					// Two Reinhardt Charges colliding
-					else if (packet.type == 58 && entity != null && entity2 != null) {
-						TickHandler.unregister(true, TickHandler.getHandler(entity, Identifier.HERO_SNEAKING));
-						TickHandler.register(true, Handlers.PREVENT_INPUT.setEntity(entity).setTicks(20),
-								Handlers.PREVENT_ROTATION.setEntity(entity).setTicks(20), 
-								Handlers.PREVENT_MOVEMENT.setEntity(entity).setTicks(20));
-						TickHandler.register(true, Handlers.PREVENT_INPUT.setEntity(entity2).setTicks(20),
-								Handlers.PREVENT_ROTATION.setEntity(entity2).setTicks(20), 
-								Handlers.PREVENT_MOVEMENT.setEntity(entity2).setTicks(20));
-					}
-					// Set player's rotations
-					else if (packet.type == 59 && entity == player) {
-						player.prevRotationYaw = player.rotationYaw;
-						player.prevRotationPitch = player.rotationPitch;
-						player.rotationYaw = (float) packet.x;
-						player.rotationPitch = (float) packet.y;
-						//player.rotationYaw = (float) MathHelper.wrapDegrees(MathHelper.clamp(MathHelper.wrapDegrees(packet.x), MathHelper.wrapDegrees(player.rotationYaw-1), MathHelper.wrapDegrees(player.rotationYaw+1)));
-						//player.rotationPitch = (float) MathHelper.wrapDegrees(MathHelper.clamp(MathHelper.wrapDegrees(packet.y), MathHelper.wrapDegrees(player.rotationPitch-1), MathHelper.wrapDegrees(player.rotationPitch+1)));
-					}
-					// Ranks
-					else if (packet.type == 60) {
-						RankManager.clientRanks.clear();
-						for (Rank rank : Rank.values())
-							if ((((int)packet.x) >> rank.ordinal() & 1) == 1)
-								RankManager.clientRanks.add(rank);
-					}
-					// Sombra's hack
-					else if (packet.type == 61 && entity instanceof EntityLivingBase) {
-						if (packet.bool)
-							TickHandler.register(true, ItemSombraMachinePistol.HACK.setEntity(entity).setEntityLiving(null).setTicks(10));
-						else {
-							TickHandler.unregister(true, TickHandler.getHandler(entity, Identifier.SOMBRA_HACK));
-							// entity2 hacked
-							if (entity2 instanceof EntityLivingBase) {
-								ItemSombraMachinePistol.hackEntity((EntityLivingBase) entity, (EntityLivingBase)entity2);
-							}
-						}
-					}
-					// Doomfist's punch
-					else if (packet.type == 62 && entity != null) {
-						if (packet.bool) {
-							TickHandler.register(true, ItemDoomfistWeapon.PUNCH.setEntity(entity).setEntityLiving((EntityLivingBase) entity2).setTicks((int) packet.x).setNumber(packet.y),
-									Handlers.PREVENT_ROTATION.setEntity(entity).setTicks((int) packet.x));
-							if (entity == player)
-								TickHandler.register(true, Ability.ABILITY_USING.setEntity(entity).setTicks((int) packet.x).setAbility(EnumHero.DOOMFIST.ability1));
-						}
-						else {
-							// entity2 punched
-							if (entity2 instanceof EntityLivingBase) {
-								TickHandler.interrupt(entity2);
-								TickHandler.register(true, Handlers.PREVENT_INPUT.setEntity(entity2).setTicks((int) packet.x),
-										Handlers.PREVENT_ROTATION.setEntity(entity2).setTicks((int) packet.x), 
-										Handlers.PREVENT_MOVEMENT.setEntity(entity2).setTicks((int) packet.x).setBoolean(true),
-										ItemDoomfistWeapon.PUNCHED.setEntity(entity2).setEntityLiving((EntityLivingBase) entity).setTicks((int) packet.x).setNumber(packet.y).setNumber2(packet.z).setAllowDead(true));
-								TickHandler.register(true, ItemDoomfistWeapon.PUNCH_ANIMATIONS.setEntity(entity).setTicks(5));
-								Vector2f rotations = EntityHelper.getEntityPartialRotations(entity);
-								Vec3d vec = EntityHelper.getShootingPos((EntityLivingBase) entity, rotations.x, rotations.y, EnumHand.MAIN_HAND, 0, 0.5f, 1);
-								Minewatch.proxy.spawnParticlesCustom(EnumParticle.CIRCLE, entity.world, vec.x, vec.y, vec.z, 0, 0, 0, 0xFFD9B2, 0xE8C4A2, 1f, 4, 10, 15, 0, 0);
-								Minewatch.proxy.spawnParticlesCustom(EnumParticle.DOOMFIST_PUNCH_3, entity.world, vec.x, vec.y, vec.z, 0, 0, 0, 0xFFFFFF, 0xFFFFFF, 0.7f, 4, 10, 15, 0, 0);
-							}
-							//TickHandler.unregister(true, TickHandler.getHandler(entity, Identifier.DOOMFIST_PUNCH),
-							//TickHandler.getHandler(entity, Identifier.PREVENT_ROTATION));
-							if (entity == player)
-								TickHandler.unregister(true, TickHandler.getHandler(entity, Identifier.ABILITY_USING));
-						}
-					}
-					// Doomfist's uppercut
-					else if (packet.type == 63 && entity != null) {
-						if (packet.bool) {
-							// entity2 hit by uppercut
-							if (entity2 instanceof EntityLivingBase) {
-								entity2.motionX += entity.motionX*2f;
-								entity2.motionZ += entity.motionZ*2f;
-								TickHandler.register(true, ItemDoomfistWeapon.UPPERCUT.setEntity(entity2).setEntityLiving((EntityLivingBase) entity).setTicks((int) packet.x).setAllowDead(true));
-							}
-							else
-								TickHandler.register(true, ItemDoomfistWeapon.UPPERCUTTING.setEntity(entity).setTicks((int) packet.x),
-										Ability.ABILITY_USING.setEntity(entity).setTicks((int) packet.x).setAbility(EnumHero.DOOMFIST.ability3));
-						}
-					}
-					// Doomfist's slam
-					else if (packet.type == 64 && entity != null) {
-						// entity2 hit by slam
-						if (entity2 instanceof EntityLivingBase) {
-							//TickHandler.register(true, ItemDoomfistWeapon.SLAM.setEntity(entity2).setEntityLiving((EntityLivingBase) entity).setTicks((int) packet.x));
-						}
-						else {
-							TickHandler.unregister(true, TickHandler.getHandler(player, Identifier.DOOMFIST_UPPERCUTTING));
-							TickHandler.register(true, ItemDoomfistWeapon.SLAM.setEntity(entity).setTicks(10).setPosition(new Vec3d(packet.x, packet.y, packet.z)).setNumber2(entity.posY),
-									Ability.ABILITY_USING.setEntity(entity).setTicks(50).setAbility(EnumHero.DOOMFIST.ability2));
-						}
-					}
-					// cancel dead handler
-					else if (packet.type == 65 && entity != null)
-						TickHandler.unregister(true, TickHandler.getHandler(entity, Identifier.DEAD));
-					// doomfist charge punch
-					else if (packet.type == 66 && entity instanceof EntityLivingBase) {
-						Minewatch.proxy.spawnParticlesMuzzle(EnumParticle.DOOMFIST_PUNCH_3, entity.world, (EntityLivingBase) entity, 0xFFFFFF, 0xDDDDFF, 1, EnumHero.DOOMFIST.weapon.getMaxItemUseDuration(((EntityLivingBase)entity).getHeldItemMainhand())+8, 4, 6, entity.world.rand.nextFloat()*2f, 0.01f, EnumHand.MAIN_HAND, 5, 1);
-						((EntityLivingBase) entity).setActiveHand(EnumHand.MAIN_HAND);
-					}
-					// doomfist slam
-					else if (packet.type == 67 && entity != null) {
-						ItemDoomfistWeapon.spawnSlamParticles(entity.world, (float) packet.x2, new Vec3d(packet.x, packet.y, packet.z));
-					}
-					// update TileEntityTeam (because sometimes it's removed from tickableTileEntities)
-					else if (packet.type == 68 && player != null) {
-						TileEntity te = player.world.getTileEntity(new BlockPos(packet.x, packet.y, packet.z));
-						if (te != null && te instanceof TileEntityTeam && !player.world.tickableTileEntities.contains(te))
-							te.invalidate();
-					}
-					// show health bar
-					else if (packet.type == 69 && entity != null) {
-						TickHandler.register(true, HealthManager.SHOW_HEALTH.setEntity(entity).setTicks(100));
-					}
-					// add / remove health
-					else if (packet.type == 70 && entity instanceof EntityLivingBase && packet.y >= 0 && packet.y < HealthManager.Type.values().length) {
-						HealthManager.Type type = HealthManager.Type.values()[(int) packet.y];
-						if (packet.bool)
-							HealthManager.addHealth((EntityLivingBase) entity, type, (float) packet.x);
-						else
-							HealthManager.removeHealth((EntityLivingBase) entity, type, null, (float) packet.x);
-					}
-					// non health shield
-					else if (packet.type == 71 && entity instanceof EntityLivingBase) {
-						TickHandler.Handler handler = TickHandler.getHandler(entity, Identifier.HEALTH_NON_HEALTH_SHIELD);
-						if (handler == null) 
-							TickHandler.register(true, HealthManager.NON_HEALTH_SHIELD.setEntity(entity).setTicks(999999).setNumber(packet.x));
-						else 
-							handler.setNumber(packet.x);
-					}
-					// hanzo sonic hit entity
-					else if (packet.type == 72 && entity != null && entity2 instanceof EntityLivingBase) {
-						TickHandler.register(true, EntityHanzoSonicArrow.SONIC.setEntity(entity).setEntityLiving((EntityLivingBase) entity2).setTicks(0).setAllowDead(true));
-					}
-					// health shield decay
-					else if (packet.type == 73 && entity instanceof EntityLivingBase) {
-						HealthManager.setShieldAbilityDecay((EntityLivingBase) entity, (float) packet.x, (float) packet.y, (int) packet.z);
-					}
-					// roadhog heal
-					else if (packet.type == 74 && entity instanceof EntityLivingBase) {
-						TickHandler.register(true, ItemRoadhogWeapon.HEALING.setEntity(entity).setTicks(36));
-						if (entity == player)
-							TickHandler.register(true, Ability.ABILITY_USING.setEntity(player).setTicks(36).setAbility(EnumHero.ROADHOG.ability1));
-					}
-					// 3rd person / 1st person
-					else if (packet.type == 75 && packetPlayer == player) {
-						if (packet.bool && Minecraft.getMinecraft().gameSettings.thirdPersonView == 0)
-							Minecraft.getMinecraft().gameSettings.thirdPersonView = 1;
-						else if (!packet.bool && Minecraft.getMinecraft().gameSettings.thirdPersonView != 0)
-							Minecraft.getMinecraft().gameSettings.thirdPersonView = 0;
-					}
-					// roadhog hook
-					else if (packet.type == 76 && entity2 instanceof EntityRoadhogHook && entity instanceof EntityLivingBase) {
-						TickHandler.register(true, ItemRoadhogWeapon.HOOKING.setEntity(entity2).setEntityLiving((EntityLivingBase) entity).setTicks((int) packet.x));
-						if (entity == player)
-							TickHandler.register(true, Ability.ABILITY_USING.setEntity(player).setTicks((int) packet.x).setAbility(EnumHero.ROADHOG.ability2));
-					}
-					// roadhog hook attach / retract
-					else if (packet.type == 77 && entity instanceof EntityRoadhogHook) {
-						if (entity2 instanceof EntityLivingBase)
-							((EntityRoadhogHook)entity).setHooked((EntityLivingBase) entity2);
-						((EntityRoadhogHook)entity).setRetracting();
-					}
-					// print client handlers
-					else if (packet.type == 78) {
-						player.sendMessage(new TextComponentString("Client handlers: "+TickHandler.getHandlersString(true)));
-					}
-					// sync ultimate charge
-					else if (packet.type == 79) {
-						UltimateManager.setCharge(player, (float) packet.x, false);
-					}
-					// widowmaker's ult
-					else if (packet.type == 80 && entity instanceof EntityLivingBase) {
-						if (entity == player)
-							TickHandler.register(true, ItemWidowmakerRifle.ULTIMATE.setEntity(player).setTicks((int) packet.x));
-						for (Entity target : entity.world.loadedEntityList)
-							if (target instanceof EntityLivingBase && EntityHelper.shouldTarget(entity, target, false))
-								TickHandler.register(true, Handlers.CLIENT_GLOWING.setEntity(target).setTicks((int) packet.x));
-					}
-					// pharah's concussive
-					else if (packet.type == 81 && entity instanceof EntityLivingBase) {
-						TickHandler.register(true, ItemPharahWeapon.CONCUSSIVE.setEntity(entity).setTicks(10));
-					}
-					// pharah's jump jet
-					else if (packet.type == 82 && entity instanceof EntityLivingBase) {
-						entity.onGround = false;
-						entity.motionY = Math.max(Config.lowerGravity ? 1.7f : 2, entity.motionY);
-						Vec3d look = EntityHelper.getLook(0, entity.getRotationYawHead()).scale(0.9d);
-						entity.motionX += look.x;
-						entity.motionZ += look.z;
-						TickHandler.register(true, ItemPharahWeapon.JET.setEntity(entity).setTicks(15));
-					}
-					// widowmaker's ult - start tracking entity
-					else if (packet.type == 83 && entity instanceof EntityLivingBase && entity2 instanceof EntityLivingBase) {
-						TickHandler.register(true, Handlers.CLIENT_GLOWING.setEntity(entity2).setTicks((int) packet.x));
-					}
-					// pharah's ult
-					else if (packet.type == 84 && entity instanceof EntityLivingBase) {
-						TickHandler.register(true, ItemPharahWeapon.ULTIMATE.setEntity(entity).setTicks(60),
-								Handlers.PREVENT_MOVEMENT.setEntity(entity).setTicks(60),
-								UltimateManager.PREVENT_CHARGE.setEntity(entity).setTicks(60));
-					}
-					// login event
-					else if (packet.type == 85 && entity instanceof EntityLivingBase && packet.x >= 0 && packet.x < EventManager.Type.values().length) {
-						EventManager.onEvent(EventManager.Type.values()[(int) packet.x], (EntityLivingBase) entity);
-					}
-					// cancel Reaper's wraith
-					else if (packet.type == 86 && entity != null) {
-						TickHandler.unregister(true, TickHandler.getHandler(entity, Identifier.ABILITY_USING),
-								TickHandler.getHandler(entity, Identifier.REAPER_WRAITH),
-								TickHandler.getHandler(entity, Identifier.INVULNERABLE),
-								TickHandler.getHandler(entity, Identifier.VIEW_BOBBING));
-					}
-					// Sombra's ult
-					else if (packet.type == 87 && entity instanceof EntityLivingBase) {
-						TickHandler.register(true, ItemSombraMachinePistol.ULTIMATE.setEntity(entity).setTicks((int) packet.x),
+				// Tracer's dash
+				if (packet.type == 0 && entity != null) {
+					if (entity == player) {
+						player.chasingPosX = player.posX;
+						player.chasingPosY = player.posY;
+						player.chasingPosZ = player.posZ;
+						player.setSneaking(false);
+						move(player, 9, false, true);
+					}
+					TickHandler.register(true, ItemTracerPistol.RECOLOR.setEntity(entity).setTicks(20));
+				}
+				// Reaper's teleport
+				else if (packet.type == 1 && entity instanceof EntityLivingBase) {
+					entity.rotationPitch = 0;
+					TickHandler.register(true, ItemReaperShotgun.TPS.setEntity(entity).setTicks(70).setPosition(new Vec3d(packet.x, packet.y, packet.z)),
+							Ability.ABILITY_USING.setEntity(entity).setTicks(70).setAbility(EnumHero.REAPER.ability1));
+					Minewatch.proxy.spawnParticlesReaperTeleport(entity.world, (EntityLivingBase) entity, true, 0);
+					Minewatch.proxy.spawnParticlesReaperTeleport(entity.world, (EntityLivingBase) entity, false, 0);
+					if (player == entity)
+						ItemReaperShotgun.tpThirdPersonView.put(player, Minecraft.getMinecraft().gameSettings.thirdPersonView);
+				}
+				// McCree's roll
+				else if (packet.type == 2 && entity instanceof EntityLivingBase) {
+					if (entity == player) {
+						player.onGround = true;
+						player.movementInput.sneak = true;
+					}
+					if (packet.bool) {
+						TickHandler.register(true, ItemMcCreeGun.ROLL.setEntity(entity).setTicks(10),
+								Ability.ABILITY_USING.setEntity(entity).setTicks(10).setAbility(EnumHero.MCCREE.ability2),
+								RenderManager.SNEAKING.setEntity(entity).setTicks(11));
+					}
+					if (entity == player)
+						move((EntityLivingBase) entity, 0.6d, false, false);
+				}
+				// Genji's strike
+				else if (packet.type == 3 && entity != null) {
+					TickHandler.unregister(true, TickHandler.getHandler(entity, Identifier.GENJI_DEFLECT));
+					TickHandler.register(true, ItemGenjiShuriken.STRIKE.setEntity(entity).setTicks(8),
+							ItemGenjiShuriken.SWORD_CLIENT.setEntity(entity).setTicks(8),
+							Ability.ABILITY_USING.setEntity(entity).setTicks(8).setAbility(EnumHero.GENJI.ability2).setBoolean(true),
+							RenderManager.SNEAKING.setEntity(entity).setTicks(9));
+					if (entity == player)
+						move(player, 1.8d, false, true);
+				}
+				// Genji's deflect
+				else if (packet.type == 4 && entity != null) {
+					if (packet.bool)
+						TickHandler.register(true, ItemGenjiShuriken.DEFLECT.setEntity(entity).setTicks((int) packet.x));
+					TickHandler.register(true, ItemGenjiShuriken.SWORD_CLIENT.setEntity(entity).setTicks((int) packet.x));
+					TickHandler.register(true, Ability.ABILITY_USING.setEntity(entity).setTicks((int) packet.x).
+							setAbility(packet.bool ? EnumHero.GENJI.ability1 : null).setBoolean(true));
+				}
+				// Reinhardt's hammer swing
+				else if (packet.type == 5) {
+					Minewatch.proxy.mouseClick();
+				}
+				// Sync playersUsingAlt
+				else if (packet.type == 6 && packetPlayer != null) {
+					ItemStack stack = packetPlayer.getHeldItemMainhand();
+					//ItemMWWeapon.setAlternate(stack, packet.bool);
+					// cause reequip animation if player
+					if (stack != null && stack.getItem() instanceof ItemMWWeapon)
+						((ItemMWWeapon)stack.getItem()).reequipAnimation(stack);
+				}
+				// open display gui
+				else if (packet.type == 7) {
+					Minecraft.getMinecraft().displayGuiScreen(new GuiDisplay((int) packet.x));
+				}
+				// clear Frozen effect
+				else if (packet.type == 8) {
+					player.removePotionEffect(ModPotions.frozen);
+				}
+				// Mei's freeze / Reaper's tp
+				else if (packet.type == 9 && entity instanceof EntityLivingBase) {
+					if (packet.bool)
+						((EntityLivingBase) entity).addPotionEffect(new PotionEffect(ModPotions.frozen, (int) packet.x, 0, false, true));
+					if (entity == player)
+						TickHandler.register(true, Handlers.PREVENT_INPUT.setEntity(entity).setTicks((int) packet.x),
 								Handlers.PREVENT_MOVEMENT.setEntity(entity).setTicks((int) packet.x),
-								UltimateManager.PREVENT_CHARGE.setEntity(entity).setTicks((int) packet.x),
-								Ability.ABILITY_USING.setEntity(entity).setTicks((int) packet.x).setAbility(EnumHero.SOMBRA.ultimate));
-						AttachmentManager.addAttachments((EntityLivingBase)entity, Type.SOMBRA_ULTIMATE_DOME);
-						entity.onGround = false;
-						entity.move(MoverType.PLAYER, 0, 2d, 0);
-						boolean friendly = !EntityHelper.shouldHit(entity, Minecraft.getMinecraft().getRenderViewEntity(), false);
-						int color = friendly ? 0xDC89FE : 0xFF6666;
-						int colorFade = friendly ? 0xEEF0F4 : 0xAF6666;
-						Minewatch.proxy.spawnParticlesCustom(EnumParticle.SOMBRA_ULTIMATE_0, entity.world, entity, color, colorFade, 5, 18, 15, 34, 0, 0);
-						Minewatch.proxy.spawnParticlesCustom(EnumParticle.SOMBRA_ULTIMATE_0, entity.world, entity, color, colorFade, 5, 18, 15, 34, 0, 0);
-						Minewatch.proxy.spawnParticlesCustom(EnumParticle.CIRCLE, entity.world, entity, color, color, 0.8f, 18, 20, 45, 0, 0);
+								Handlers.PREVENT_ROTATION.setEntity(entity).setTicks((int) packet.x));
+				}
+				// Reaper's wraith
+				else if (packet.type == 10 && entity != null) {
+					TickHandler.register(true, Ability.ABILITY_USING.setEntity(entity).setTicks(60).setAbility(EnumHero.REAPER.ability2),
+							ItemReaperShotgun.WRAITH.setEntity(entity).setTicks(60),
+							Handlers.INVULNERABLE.setEntity(entity).setTicks(60),
+							Handlers.VIEW_BOBBING.setEntity(entity).setTicks(60).setBoolean(false));
+				}
+				// wake up from Ana's sleep dart
+				else if (packet.type == 11 && entity != null) {
+					for (Identifier identifier : new Identifier[] {Identifier.ANA_SLEEP,
+							Identifier.PREVENT_INPUT, Identifier.PREVENT_MOVEMENT, Identifier.PREVENT_ROTATION}) {
+						TickHandler.Handler handler = TickHandler.getHandler(entity, identifier);
+						if (handler != null)
+							handler.ticksLeft = 10;
 					}
-					// Roadhog's ult
-					else if (packet.type == 88 && entity instanceof EntityLivingBase) {
-						TickHandler.register(true, ItemRoadhogWeapon.ULTIMATE.setEntity(entity).setTicks((int) packet.x),
-								UltimateManager.PREVENT_CHARGE.setEntity(entity).setTicks((int) packet.x),
-								Ability.ABILITY_USING.setEntity(entity).setTicks((int) packet.x).setAbility(EnumHero.ROADHOG.ultimate));
+					TickHandler.unregister(true, TickHandler.getHandler(handler->handler.identifier == Identifier.HERO_MESSAGES && handler.string.contains("SLEEP"), true));
+				}
+				// Ana's sleep dart
+				else if (packet.type == 12 && entity != null) {
+					TickHandler.register(true, RenderManager.MESSAGES.setEntity(entity).setTicks(120).setString(TextFormatting.DARK_RED+""+TextFormatting.ITALIC+""+TextFormatting.BOLD+"SLEEP").setNumber(MessageTypes.TOP.ordinal()));
+					TickHandler.register(true, ItemAnaRifle.SLEEP.setEntity(entity).setTicks(120),
+							Handlers.PREVENT_INPUT.setEntity(entity).setTicks(120),
+							Handlers.PREVENT_MOVEMENT.setEntity(entity).setTicks(120),
+							Handlers.PREVENT_ROTATION.setEntity(entity).setTicks(120));
+					if (entity instanceof EntityLivingBase)
+						Handlers.rotations.put((EntityLivingBase) entity, Triple.of(0f, 0f, 0f));
+				}
+				// Genji's deflect
+				else if (packet.type == 13 && entity != null) {
+					// spawn sweep particle
+					double d0 = (double)(-MathHelper.sin(entity.rotationYaw * 0.017453292F));
+					double d1 = (double)MathHelper.cos(entity.rotationYaw * 0.017453292F);
+					entity.world.spawnParticle(EnumParticleTypes.SWEEP_ATTACK, entity.posX + d0, entity.posY + (double)entity.height * 0.8D, entity.posZ + d1, 0, d0, 0.0D, new int[0]);
+					if (entity == player)
+						TickHandler.register(true, Handlers.ACTIVE_HAND.setEntity(entity).setTicks(5));
+					if (entity2 instanceof IThrowableEntity)
+						((IThrowableEntity)entity2).setThrower(entity);
+					if (entity2 instanceof EntityMW)
+						((EntityMW)entity2).onDeflect();
+					else if (entity2 instanceof EntityLivingBaseMW)
+						((EntityLivingBaseMW)entity2).onDeflect();
+				}
+				// Kill/assist messages
+				else if (packet.type == 14 && packetPlayer == player && entity != null &&
+						(Config.trackKillsOption == 0 || (Config.trackKillsOption == 1 && entity instanceof EntityPlayer))) {
+					String string = null;
+					String name = EntityHelper.getName(entity);
+					if (packet.x == -1)
+						string = TextFormatting.BOLD + "" + TextFormatting.ITALIC+Minewatch.translate("overlay.eliminated_by").toUpperCase()+" "+
+								TextFormatting.DARK_RED + TextFormatting.BOLD + TextFormatting.ITALIC + TextFormatting.getTextWithoutFormattingCodes(name);
+					else
+						string = TextFormatting.BOLD + "" + TextFormatting.ITALIC+(packet.bool ? Minewatch.translate("overlay.assist").toUpperCase()+" " : Minewatch.translate("overlay.eliminated").toUpperCase()+" ") +
+						TextFormatting.DARK_RED + TextFormatting.BOLD + TextFormatting.ITALIC + TextFormatting.getTextWithoutFormattingCodes(name) +
+						TextFormatting.RESET + TextFormatting.BOLD + TextFormatting.ITALIC + " " + (int)packet.x;
+					TickHandler.register(true, RenderManager.MESSAGES.setEntity(player).
+							setString(new String(string).toUpperCase()).setNumber(MessageTypes.MIDDLE.ordinal()).
+							setTicks(70+TickHandler.getHandlers(player, Identifier.HERO_MESSAGES).size()*1).setBoolean(packet.bool).setAllowDead(true));
+					if (packet.x != -1) {
+						TickHandler.register(true, RenderManager.KILL_OVERLAY.setEntity(player).setTicks(10));
+						ModSoundEvents.KILL.playSound(player, 0.1f, 1, true);
+						if (!(entity instanceof EntityLivingBaseMW)) {
+							TickHandler.Handler handler = TickHandler.getHandler(player, Identifier.HERO_MULTIKILL);
+							if (handler == null)
+								TickHandler.register(true, RenderManager.MULTIKILL.setEntity(player).setTicks(40).setNumber(1));
+							else if (handler.number < 6) {
+								handler.setTicks(40);
+								handler.setNumber(handler.number+1);
+								if (handler.number > 1 && handler.number < 7) {
+									ModSoundEvents.MULTIKILL_2.stopSound(player);
+									ModSoundEvents.MULTIKILL_3.stopSound(player);
+									ModSoundEvents.MULTIKILL_4.stopSound(player);
+									ModSoundEvents.MULTIKILL_5.stopSound(player);
+									ModSoundEvents.MULTIKILL_6.stopSound(player);
+									ModSoundEvents.valueOf("MULTIKILL_"+(int)handler.number).playFollowingSound(player, 1, 1, false);
+								}
+							}
+						}
 					}
-					// print following sounds
-					else if (packet.type == 89) {
-						player.sendMessage(new TextComponentString("Sounds: "+FollowingSound.sounds));
+
+				}
+				// Damage entity
+				else if (packet.type == 15 && packetPlayer == player) {
+					TickHandler.Handler handler = TickHandler.getHandler(player, Identifier.HIT_OVERLAY);
+					if (handler == null || handler.ticksLeft < 11)
+						TickHandler.register(true, RenderManager.HIT_OVERLAY.setEntity(player).setTicks(10).setNumber(packet.x));
+					else
+						handler.setNumber(handler.number + packet.x/3d).setTicks(10);
+					// play damage sound
+					ModSoundEvents.HURT.playSound(player, (float) MathHelper.clamp(packet.x/18f, 0.1f, 0.4f), 1.0f, true);
+				}
+				// Interrupt
+				else if (packet.type == 16 && entity != null) {
+					TickHandler.interrupt(entity);
+				}
+				// sync config
+				else if (packet.type == 17) {
+					Minewatch.network.sendToServer(new PacketSyncConfig());
+				}
+				// add opped button to tab
+				else if (packet.type == 18) {
+					GuiTab.addOppedButtons();
+				}
+				// Mercy's Angel
+				else if (packet.type == 19 && entity != null) {
+					if (packet.bool)
+						ModSoundEvents.MERCY_ANGEL_VOICE.playFollowingSound(entity, 1, 1, false);
+					ModSoundEvents.MERCY_ANGEL.playFollowingSound(entity, 1, 1, false);
+					TickHandler.register(true, ItemMercyWeapon.ANGEL.setEntity(entity).setPosition(new Vec3d(packet.x, packet.y, packet.z)).setTicks(75),
+							Ability.ABILITY_USING.setTicks(75).setEntity(entity).setAbility(EnumHero.MERCY.ability3));
+				}
+				// Junkrat's grenade bounce
+				else if (packet.type == 20 && entity instanceof EntityJunkratGrenade) {
+					// direct hit
+					if (packet.bool && entity2 instanceof Entity) {
+						((EntityJunkratGrenade)entity).explode(null);
+						ModSoundEvents.JUNKRAT_GRENADE_EXPLODE.playSound(entity, 1, 1);
 					}
+					// bounce
+					else {
+						((EntityJunkratGrenade)entity).bounces = (int) packet.x;
+						if (packet.x == 0)
+							ModSoundEvents.JUNKRAT_GRENADE_TICK_0.playFollowingSound(entity, 1, 1, true);
+						else if (packet.x == 1)
+							ModSoundEvents.JUNKRAT_GRENADE_TICK_1.playFollowingSound(entity, 1, 1, true);
+						else if (packet.x == 2)
+							ModSoundEvents.JUNKRAT_GRENADE_TICK_2.playFollowingSound(entity, 1, 1, true);
+						else
+							ModSoundEvents.JUNKRAT_GRENADE_TICK_3.playSound(entity, 1, 1);
+						Minewatch.proxy.spawnParticlesCustom(EnumParticle.SPARK, entity.world, entity.posX, entity.posY, entity.posZ,
+								0, 0, 0, 0xFCCD75, 0xFFDA93, 0.7f, 2, 3, 2.5f, entity.world.rand.nextFloat(), 0.01f);
+						ModSoundEvents.JUNKRAT_GRENADE_BOUNCE.playSound(entity, 0.7f, 1);
+					}
+				}
+				// Shoot Ana's sleep dart
+				else if (packet.type == 21 && packetPlayer == player && player != null) {
+					TickHandler.register(true, Ability.ABILITY_USING.setEntity(player).setTicks((int)packet.x).setAbility(EnumHero.ANA.ability2));
+				}
+				// Unused
+				else if (packet.type == 22 && packetPlayer != null) {}
+				// Frozen particles
+				else if (packet.type == 23 && entity != null) {
+					for (int i=0; i<3; ++i)
+						Minewatch.proxy.spawnParticlesCustom(EnumParticle.CIRCLE, entity.world,
+								packet.x+entity.world.rand.nextDouble()-0.5d,
+								packet.y+entity.world.rand.nextDouble()-0.5d,
+								packet.z+entity.world.rand.nextDouble()-0.5d,
+								0, 0.01f, 0, 0x5BC8E0, 0xAED4FF,
+								entity.world.rand.nextFloat(), 5, 20f, 25f, 0, 0);
+				}
+				// Junkrat death grenades
+				else if (packet.type == 24 && entity instanceof EntityJunkratGrenade) {
+					((EntityJunkratGrenade)entity).explodeTimer = (int) packet.x;
+					((EntityJunkratGrenade)entity).isDeathGrenade = true;
+				}
+				// Junkrat trap
+				else if (packet.type == 25 && entity instanceof EntityJunkratTrap && entity2 instanceof EntityLivingBase) {
+					if (packet.bool) {
+						TickHandler.register(true, RenderManager.MESSAGES.setEntity(entity2).setTicks(70).setString(TextFormatting.DARK_RED+""+TextFormatting.ITALIC+""+TextFormatting.BOLD+"TRAPPED").setNumber(MessageTypes.TOP.ordinal()));
+						((EntityJunkratTrap)entity).trappedEntity = (EntityLivingBase) entity2;
+						TickHandler.register(true, Handlers.PREVENT_MOVEMENT.setTicks(70).setEntity(entity2),
+								EntityJunkratTrap.TRAPPED.setTicks(70).setEntity(entity2));
+						if (((EntityJunkratTrap)entity).getThrower() == player) {
+							ModSoundEvents.JUNKRAT_TRAP_PLACED_VOICE.stopSound(player);
+							ModSoundEvents.JUNKRAT_TRAP_TRIGGER_OWNER.playFollowingSound(player, 1, 1, false);
+							ModSoundEvents.JUNKRAT_TRAP_TRIGGER_VOICE.playFollowingSound(player, 1, 1, false);
+						}
+					}
+					if (packetPlayer == player && player != null)
+						Minewatch.proxy.spawnParticlesCustom(EnumParticle.JUNKRAT_TRAP_TRIGGERED, player.world, entity.posX, entity.posY+1.5d, entity.posZ, 0, 0, 0, 0xFFFFFF, 0xFFFFFF, 1, 80, 5, 5, 0, 0);
+				}
+				// Junkrat trap destroyed
+				else if (packet.type == 26 && entity instanceof EntityJunkratTrap) {
+					if (packet.bool)
+						for (int i=0; i<30; ++i)
+							entity.world.spawnParticle(EnumParticleTypes.EXPLOSION_NORMAL,
+									entity.posX+(entity.world.rand.nextDouble()-0.5d)*1d, entity.posY+entity.world.rand.nextDouble()*1d, entity.posZ+(entity.world.rand.nextDouble()-0.5d)*1d, 0, 0, 0, new int[0]);
+					else
+						TickHandler.unregister(true,
+								TickHandler.getHandler(((EntityJunkratTrap)entity).trappedEntity, Identifier.PREVENT_MOVEMENT),
+								TickHandler.getHandler(((EntityJunkratTrap)entity).trappedEntity, Identifier.JUNKRAT_TRAP));
+					entity.setDead();
+				}
+				// Sombra's invisibility
+				else if (packet.type == 27 && entity != null) {
+					if (packet.bool) {
+						TickHandler.register(true, ItemSombraMachinePistol.INVISIBLE.setEntity(entity).setTicks(130),
+								Ability.ABILITY_USING.setEntity(entity).setTicks(120).setAbility(EnumHero.SOMBRA.ability3));
+						if (entity == player) {
+							Minewatch.proxy.updateFOV();
+							ModSoundEvents.SOMBRA_INVISIBLE_START.playFollowingSound(entity, 1, 1, false);
+						}
+					}
+					else if (entity instanceof EntityLivingBase)
+						ItemSombraMachinePistol.cancelInvisibility((EntityLivingBase) entity);
+				}
+				// Widowmaker's venom trap
+				else if (packet.type == 28 && entity != null && entity2 instanceof EntityLivingBase) {
+					TickHandler.register(true, EntityWidowmakerMine.POISONED.setTicks(100).setEntity(entity).setEntityLiving((EntityLivingBase) entity2));
+					if (entity2 == player && player != null)
+						Minewatch.proxy.spawnParticlesCustom(EnumParticle.WIDOWMAKER_MINE_TRIGGERED, entity2.world, packet.x, packet.y+1, packet.z, 0, 0, 0, 0xFFFFFF, 0xFFFFFF, 1, 80, 5, 5, 0, 0);
+				}
+				// Sombra's teleport
+				else if (packet.type == 29 && entity != null) {
+					TickHandler.register(true, ItemSombraMachinePistol.TELEPORT.setEntity(entity).setTicks(10).
+							setPosition(new Vec3d(packet.x, packet.y, packet.z)));
+				}
+				// Junkrat's mine explosion
+				else if (packet.type == 30 && entity instanceof EntityJunkratMine) {
+					((EntityJunkratMine)entity).explode();
+				}
+				// Bastion's reconfigure
+				else if (packet.type == 31 && entity instanceof EntityLivingBase) {
+					ItemMWWeapon.setAlternate(((EntityLivingBase)entity).getHeldItemMainhand(), packet.bool);
+					if (packet.bool) {
+						TickHandler.register(true, ItemBastionGun.TURRET.setEntity(entity).setTicks(10));
+						ModSoundEvents.BASTION_RECONFIGURE_1.playFollowingSound(entity, 1, 1, false);
+					}
+					else
+						ModSoundEvents.BASTION_RECONFIGURE_0.playFollowingSound(entity, 1, 1, false);
+				}
+				// Mei's cryo-freeze
+				else if (packet.type == 32 && entity != null) {
+					if (packet.bool) {
+						if (entity == player) {
+							ItemMeiBlaster.thirdPersonView = Minecraft.getMinecraft().gameSettings.thirdPersonView;
+							TickHandler.register(true, Ability.ABILITY_USING.setEntity(entity).setTicks(80).setAbility(EnumHero.MEI.ability2));
+						}
+						TickHandler.register(true, ItemMeiBlaster.CRYSTAL.setEntity(entity).setTicks(80),
+								Handlers.PREVENT_MOVEMENT.setEntity(entity).setTicks(80),
+								Handlers.PREVENT_INPUT.setEntity(entity).setTicks(80),
+								Handlers.PREVENT_ROTATION.setEntity(entity).setTicks(80));
+						ModSoundEvents.MEI_CRYSTAL_START.playFollowingSound(entity, 1, 1, false);
+					}
+					else
+						TickHandler.unregister(true, TickHandler.getHandler(entity, Identifier.MEI_CRYSTAL),
+								TickHandler.getHandler(entity, Identifier.PREVENT_MOVEMENT),
+								TickHandler.getHandler(entity, Identifier.PREVENT_INPUT),
+								TickHandler.getHandler(entity, Identifier.PREVENT_ROTATION),
+								TickHandler.getHandler(entity, Identifier.ABILITY_USING));
+				}
+				// Reinhardt's fire strike
+				else if (packet.type == 33 && entity != null) {
+					TickHandler.register(true, ItemReinhardtHammer.STRIKE.setEntity(entity).setTicks(13));
+					if (entity == player)
+						TickHandler.register(true, Ability.ABILITY_USING.setEntity(player).setTicks(13).setAbility(EnumHero.REINHARDT.ability2));
+					ModSoundEvents.REINHARDT_STRIKE_THROW.playFollowingSound(entity, 1, 1, false);
+				}
+				// Set entity's position
+				else if (packet.type == 34 && entity != null) {
+					entity.setPosition(packet.x, packet.y, packet.z);
+				}
+				// Sombra's translocator
+				else if (packet.type == 35 && entity instanceof EntityLivingBase && entity2 != null) {
+					TickHandler.register(true, Ability.ABILITY_USING.setAbility(EnumHero.SOMBRA.ability2).setTicks(10).setEntity(entity));
+					if (EnumHero.SOMBRA.ability2.entities.get(entity) == null ||
+							EnumHero.SOMBRA.ability2.entities.get(entity).getEntityId() != entity2.getEntityId())
+						EnumHero.SOMBRA.ability2.entities.put((EntityLivingBase) entity, entity2);
+				}
+				// EntityHero item cooldown handler
+				else if (packet.type == 36 && entity instanceof EntityHero) {
+					ItemStack main = ((EntityHero)entity).getHeldItemMainhand();
+					ItemStack off = ((EntityHero)entity).getHeldItemOffhand();
+					if (main != null && main.getItem() instanceof ItemMWWeapon)
+						((ItemMWWeapon)main.getItem()).setCooldown(entity, (int) packet.x);
+					else if (off != null && off.getItem() instanceof ItemMWWeapon)
+						((ItemMWWeapon)off.getItem()).setCooldown(entity, (int) packet.x);
+				}
+				// Lucio's amp
+				else if (packet.type == 37) {
+					TickHandler.register(true,
+							Ability.ABILITY_USING.setEntity(player).setTicks(60).setAbility(EnumHero.LUCIO.ability2));
+				}
+				// Lucio's soundwave
+				else if (packet.type == 38 && entity instanceof EntityLivingBase) {
+					Minewatch.proxy.spawnParticlesMuzzle(EnumParticle.CIRCLE, entity.world, (EntityLivingBase) entity,
+							0xE2EA7D, 0xABBF78, 1, 13, 1, 10, 0, 0, EnumHand.MAIN_HAND, 17, 0.65f);
+					Minewatch.proxy.spawnParticlesMuzzle(EnumParticle.CIRCLE, entity.world, (EntityLivingBase) entity,
+							0xE2EA7D, 0xABBF78, 0.9f, 13, 6, 10, 0, 0, EnumHand.MAIN_HAND, 17, 0.65f);
+					Minewatch.proxy.spawnParticlesMuzzle(EnumParticle.HOLLOW_CIRCLE, entity.world, (EntityLivingBase) entity,
+							0xDFED8B, 0xABBF78, 0.7f, 15, 5+(entity.world.rand.nextFloat()-0.5f)*2f, 7+(entity.world.rand.nextFloat()-0.5f)*2f, entity.world.rand.nextFloat(), entity.world.rand.nextFloat()/10f, EnumHand.MAIN_HAND, 17, 0.65f);
+					Minewatch.proxy.spawnParticlesMuzzle(EnumParticle.HOLLOW_CIRCLE, entity.world, (EntityLivingBase) entity,
+							0xDFED8B, 0xABBF78, 0.7f, 14, 2+(entity.world.rand.nextFloat()-0.5f)*2f, 6+(entity.world.rand.nextFloat()-0.5f)*2f, entity.world.rand.nextFloat(), entity.world.rand.nextFloat()/10f, EnumHand.MAIN_HAND, 17, 0.65f);
+					Minewatch.proxy.spawnParticlesMuzzle(EnumParticle.HOLLOW_CIRCLE, entity.world, (EntityLivingBase) entity,
+							0xDFED8B, 0xABBF78, 0.7f, 13, 3+(entity.world.rand.nextFloat()-0.5f)*2f, 6+(entity.world.rand.nextFloat()-0.5f)*2f, entity.world.rand.nextFloat(), entity.world.rand.nextFloat()/10f, EnumHand.MAIN_HAND, 17, 0.65f);
+					ItemLucioSoundAmplifier.soundwave((EntityLivingBase) entity, entity.motionX, entity.motionY, entity.motionZ);
+					ModSoundEvents.LUCIO_SOUNDWAVE.playFollowingSound(entity, 1, 1, false);
+				}
+				// Lucio's soundwave (player causing it)
+				else if (packet.type == 39 && packetPlayer != null) {
+					Minewatch.network.sendToServer(new CPacketSimple(4, false, packetPlayer, packetPlayer.motionX, packetPlayer.motionY, packetPlayer.motionZ));
+				}
+				// Hurt sound for Mercy's power beam
+				else if (packet.type == 40 && entity != null) {
+					ModSoundEvents.HURT.playSound(entity, 0.3f, entity.world.rand.nextFloat()/2+0.75f, true);
+				}
+				// Entity collision raytraceresult onImpact
+				else if (packet.type == 41 && entity instanceof EntityMW) {
+					if (packet.bool)
+						entity.setDead();
+					entity.setPosition(packet.x3, packet.y3, packet.z3);
+					if (entity.ticksExisted == 0) {
+						entity.prevPosX = packet.x4;
+						entity.prevPosY = packet.y4;
+						entity.prevPosZ = packet.z4;
+					}
+					Vec3d hitVec = new Vec3d(packet.x, packet.y, packet.z);
+					RayTraceResult.Type typeOfHit = packet.x2 >= 0 && packet.x2 < RayTraceResult.Type.values().length ?
+							RayTraceResult.Type.values()[(int) packet.x2] : null;
+							EnumFacing sideHit = packet.y2 >= 0 && packet.y2 < EnumFacing.values().length ?
+									EnumFacing.values()[(int) packet.y2] : null;
+									if (typeOfHit == RayTraceResult.Type.BLOCK && sideHit != null)
+										((EntityMW)entity).onImpact(new RayTraceResult(hitVec, sideHit, new BlockPos(hitVec)));
+									else if (typeOfHit == RayTraceResult.Type.ENTITY && entity2 != null)
+										((EntityMW)entity).onImpact(new RayTraceResult(entity2, hitVec));
+				}
+				// Zenyatta's Harmony (entity is zen, entity2 is target)
+				else if (packet.type == 42 && entity != null && entity2 instanceof EntityLivingBase) {
+					// refresh / start
+					if (packet.bool) {
+						// remove discord by same player
+						TickHandler.Handler discord = TickHandler.getHandler(entity, Identifier.ZENYATTA_DISCORD);
+						if (discord != null && discord.entityLiving == entity2)
+							TickHandler.unregister(false, discord);
+						// apply harmony
+						TickHandler.Handler handler = TickHandler.getHandler(entity, Identifier.ZENYATTA_HARMONY);
+						if (handler != null)
+							handler.setTicks(60).setEntityLiving((EntityLivingBase) entity2);
+						else {
+							TickHandler.register(true, RenderManager.MESSAGES.setEntity(entity2).setTicks(100).setString(TextFormatting.AQUA+""+TextFormatting.BOLD+"HARMONY ORB"+TextFormatting.WHITE+""+TextFormatting.BOLD+" GAINED FROM "+TextFormatting.AQUA+""+TextFormatting.BOLD+EntityHelper.getName(entity).toUpperCase()).setNumber(MessageTypes.MIDDLE.ordinal()));
+							TickHandler.register(true, ItemZenyattaWeapon.HARMONY.setTicks(60).setEntity(entity).setEntityLiving((EntityLivingBase) entity2));
+							Minewatch.proxy.spawnParticlesCustom(EnumParticle.ZENYATTA_HARMONY_ORB, entity.world, entity2, 0xFFFFFF, 0xFFFFFF, 1.0f, Integer.MAX_VALUE, 3, 3, 0, 0);
+							if (entity == player && EntityHelper.isHoldingItem(player, ItemZenyattaWeapon.class, EnumHand.MAIN_HAND)) {
+								ItemZenyattaWeapon.animatingHarmony = player.getHeldItemMainhand();
+								ItemZenyattaWeapon.animatingDiscord = null;
+								ItemZenyattaWeapon.animatingTime = player.ticksExisted + ItemZenyattaWeapon.ANIMATION_TIME;
+							}
+						}
+						if (entity == player) {
+							EnumHero.ZENYATTA.ability1.entities.put((EntityLivingBase) entity, entity2);
+							Minewatch.proxy.spawnParticlesCustom(EnumParticle.ZENYATTA_HARMONY, entity.world, entity2, 0xFFFFFF, 0xFFFFFF, 1.0f, Integer.MAX_VALUE, 1, 1, 0, 0);
+						}
+					}
+					// end
+					else {
+						EnumHero.ZENYATTA.ability1.entities.remove(entity);
+						TickHandler.Handler handler = TickHandler.getHandler(entity, Identifier.ZENYATTA_HARMONY);
+						if (handler != null) {
+							TickHandler.unregister(true, handler);
+							if (entity == player/* && packet.x <= 0*/) {
+								ModSoundEvents.ZENYATTA_HEAL_RETURN.playFollowingSound(entity, 1.0f, 1.0f, false);
+								TickHandler.register(true, RenderManager.MESSAGES.setEntity(entity).setTicks(100).setString(TextFormatting.AQUA+""+TextFormatting.BOLD+"HARMONY ORB"+TextFormatting.WHITE+""+TextFormatting.BOLD+" RETURNED").setNumber(MessageTypes.MIDDLE.ordinal()));
+							}
+						}
+					}
+				}
+				// Zenyatta's Discord (entity is zen, entity2 is target)
+				else if (packet.type == 43 && entity instanceof EntityLivingBase && entity2 instanceof EntityLivingBase) {
+					// refresh / start
+					if (packet.bool) {
+						// remove harmony by same player
+						TickHandler.Handler harmony = TickHandler.getHandler(entity, Identifier.ZENYATTA_HARMONY);
+						if (harmony != null && harmony.entityLiving == entity2)
+							TickHandler.unregister(false, harmony);
+						// apply discord
+						TickHandler.Handler handler = TickHandler.getHandler(entity, Identifier.ZENYATTA_DISCORD);
+						if (handler != null)
+							handler.setTicks(60).setEntityLiving((EntityLivingBase) entity2);
+						else {
+							TickHandler.register(true, RenderManager.MESSAGES.setEntity(entity2).setTicks(100).setString(TextFormatting.DARK_RED+""+TextFormatting.BOLD+"DISCORD ORB"+TextFormatting.WHITE+""+TextFormatting.BOLD+" GAINED FROM "+TextFormatting.DARK_RED+""+TextFormatting.BOLD+EntityHelper.getName(entity).toUpperCase()).setNumber(MessageTypes.MIDDLE.ordinal()));
+							TickHandler.register(true, ItemZenyattaWeapon.DISCORD.setTicks(60).setEntity(entity).setEntityLiving((EntityLivingBase) entity2));
+							Minewatch.proxy.spawnParticlesCustom(EnumParticle.ZENYATTA_DISCORD_ORB, entity.world, entity2, 0xFFFFFF, 0xFFFFFF, 1.0f, Integer.MAX_VALUE, 3, 3, 0, 0);
+							if (entity == player && EntityHelper.isHoldingItem(player, ItemZenyattaWeapon.class, EnumHand.OFF_HAND)) {
+								ItemZenyattaWeapon.animatingDiscord = player.getHeldItemOffhand();
+								ItemZenyattaWeapon.animatingHarmony = null;
+								ItemZenyattaWeapon.animatingTime = player.ticksExisted + ItemZenyattaWeapon.ANIMATION_TIME;
+							}
+						}
+						if (entity == player) {
+							EnumHero.ZENYATTA.ability2.entities.put((EntityLivingBase) entity, entity2);
+							Minewatch.proxy.spawnParticlesCustom(EnumParticle.ZENYATTA_DISCORD, entity.world, entity2, 0xFFFFFF, 0xFFFFFF, 1.0f, Integer.MAX_VALUE, 1, 1, 0, 0);
+						}
+					}
+					// end
+					else {
+						EnumHero.ZENYATTA.ability2.entities.remove(entity);
+						TickHandler.Handler handler = TickHandler.getHandler(entity, Identifier.ZENYATTA_DISCORD);
+						if (handler != null) {
+							TickHandler.unregister(true, handler);
+							if (entity == player/* && packet.x <= 0*/) {
+								ModSoundEvents.ZENYATTA_DAMAGE_RETURN.playFollowingSound(entity, 1.0f, 1.0f, false);
+								TickHandler.register(true, RenderManager.MESSAGES.setEntity(entity).setTicks(100).setString(TextFormatting.DARK_RED+""+TextFormatting.BOLD+"DISCORD ORB"+TextFormatting.WHITE+""+TextFormatting.BOLD+" RETURNED").setNumber(MessageTypes.MIDDLE.ordinal()));
+							}
+						}
+					}
+				}
+				// health plus particles
+				else if (packet.type == 44 && entity != null) {
+					EntityHelper.spawnHealParticles(entity, packet.bool);
+				}
+
+				// Team Selector send message
+				else if (packet.type == 45 && packet.string != null) {
+					ITextComponent component = new TextComponentString(TextFormatting.GREEN+"[Team Stick] "+TextFormatting.RESET+packet.string);
+					Minecraft.getMinecraft().ingameGUI.getChatGUI().printChatMessageWithOptionalDeletion(component, 92);
+				}
+				// sync weapon charge
+				else if (packet.type == 46) {
+					EnumHero hero = SetManager.getWornSet(player);
+					if (hero != null)
+						ChargeManager.setCurrentCharge(player, (float) packet.x, false);
+				}
+				// Moira's Fade
+				else if (packet.type == 47 && entity != null) {
+					TickHandler.register(true, Ability.ABILITY_USING.setEntity(entity).setTicks(16).setAbility(EnumHero.MOIRA.ability3),
+							ItemMoiraWeapon.FADE.setEntity(entity).setTicks(16), Handlers.INVULNERABLE.setEntity(entity).setTicks(16));
+					TickHandler.unregister(true, TickHandler.getHandler(entity, Identifier.MOIRA_DAMAGE));
+					if (player == entity)
+						ItemMoiraWeapon.fadeViewBobbing.put(player, Minecraft.getMinecraft().gameSettings.viewBobbing);
+				}
+				// Moira's damage
+				else if (packet.type == 48 && entity != null) {
+					if (packet.bool)
+						TickHandler.register(true, ItemMoiraWeapon.DAMAGE.setEntity(entity).setEntityLiving(entity2 instanceof EntityLivingBase ? (EntityLivingBase) entity2 : null).setTicks(10));
+					else
+						TickHandler.unregister(true, TickHandler.getHandler(entity, Identifier.MOIRA_DAMAGE));
+				}
+				// Moira's orb select
+				else if (packet.type == 49 && entity != null) {
+					if (packet.bool) {
+						TickHandler.register(true, ItemMoiraWeapon.ORB_SELECT.setEntity(entity).setTicks(12000));
+						Minewatch.proxy.spawnParticlesCustom(EnumParticle.MOIRA_ORB, entity.world, entity, 0xFF50FF, 0xFF50FF, 0.99f, 12000, 2, 2, 0, 0.05f);
+						Minewatch.proxy.spawnParticlesCustom(EnumParticle.MOIRA_ORB, entity.world, entity, 0xFBF235, 0xFBF235, 1, 12000, 2, 2, 0, -0.05f);
+						Minewatch.proxy.spawnParticlesCustom(EnumParticle.MOIRA_ORB, entity.world, entity, 0x251A60, 0x251A60, 0.99f, 12000, 2, 2, 0, 0.05f);
+						Minewatch.proxy.spawnParticlesCustom(EnumParticle.MOIRA_ORB, entity.world, entity, 0xFBF235, 0xFBF235, 1, 12000, 2, 2, 0, -0.05f);
+					}
+					else
+						TickHandler.unregister(true, TickHandler.getHandler(entity, Identifier.MOIRA_ORB_SELECT));
+				}
+				// Select hero voice line
+				else if (packet.type == 50 && packetPlayer == player && packet.x >= 0 && packet.x < EnumHero.values().length) {
+					EnumHero hero = EnumHero.values()[(int) packet.x];
+					if (hero != null && hero.selectSound != null)
+						hero.selectSound.playFollowingSound(player, 0.5f, 1.0f, false);
+				}
+				// McCree's fan the hammer
+				else if (packet.type == 51 && entity != null) {
+					if (packet.bool)
+						TickHandler.register(true, ItemMcCreeGun.FAN.setEntity(entity).setTicks(5));
+					else
+						TickHandler.unregister(true, TickHandler.getHandler(entity, Identifier.MCCREE_FAN));
+				}
+				// McCree's flashbang
+				else if (packet.type == 52 && entity != null) {
+					TickHandler.register(true, RenderManager.MESSAGES.setEntity(entity2).setTicks(17).setString(TextFormatting.DARK_RED+""+TextFormatting.ITALIC+""+TextFormatting.BOLD+"STUNNED").setNumber(MessageTypes.TOP.ordinal()));
+					float size = Math.min(entity.height, entity.width)*9f;
+					Minewatch.proxy.spawnParticlesCustom(EnumParticle.STUN, entity.world, entity, 0xFFFFFF, 0xFFFFFF, 0.9f, 14, size, size, 0, 0);
+					TickHandler.register(true, Handlers.PREVENT_INPUT.setEntity(entity).setTicks(17),
+							Handlers.PREVENT_MOVEMENT.setEntity(entity).setTicks(17),
+							Handlers.PREVENT_ROTATION.setEntity(entity).setTicks(17));
+				}
+				// Ana's grenade
+				else if (packet.type == 53 && entity != null) {
+					if (packet.bool) {
+						TickHandler.register(true, EntityAnaGrenade.HEAL.setEntity(entity).setTicks(80));
+						if (entity == player)
+							ModSoundEvents.ANA_GRENADE_HEAL.playFollowingSound(entity, 0.2f, 1, false);
+					}
+					else {
+						TickHandler.register(true, EntityAnaGrenade.DAMAGE.setEntity(entity).setTicks(80).setNumber(packet.x));
+						if (entity == player)
+							ModSoundEvents.ANA_GRENADE_DAMAGE.playFollowingSound(entity, 1, 1, false);
+					}
+				}
+				// Tracer's recall
+				else if (packet.type == 54 && entity instanceof EntityLivingBase) {
+					Minewatch.proxy.spawnParticlesCustom(EnumParticle.HOLLOW_CIRCLE_3, entity.world, entity.posX, entity.posY+entity.height/2f, entity.posZ, 0, 0, 0, 0x63B8E8, 0x4478AD, 1, 7, 20, 0, 0, 0.5f);
+					Minewatch.proxy.spawnParticlesCustom(EnumParticle.HOLLOW_CIRCLE_2, entity.world, entity.posX, entity.posY+entity.height/2f, entity.posZ, 0, 0, 0, 0x63B8E8, 0x4478AD, 1, 7, 20, 0, 0, 0.5f);
+					Minewatch.proxy.spawnParticlesCustom(EnumParticle.SPARK, entity.world, entity.posX, entity.posY+entity.height/2f, entity.posZ, 0, 0, 0, 0x63B8E8, 0x63B8E8, 1, 7, 15, 5, 0, 0.5f);
+					Minewatch.proxy.spawnParticlesCustom(EnumParticle.SPARK, entity.world, entity.posX, entity.posY+entity.height/2f, entity.posZ, 0, 0, 0, 0xD2FFFF, 0xEAFFFF, 1, 7, 10, 5, 0, 0.8f);
+					Minewatch.proxy.spawnParticlesCustom(EnumParticle.SPARK, entity.world, entity.posX, entity.posY+entity.height/2f, entity.posZ, 0, 0, 0, 0xD2FFFF, 0xEAFFFF, 1, 15, 0, 10, 0, 0.1f);
+					((EntityLivingBase)entity).addPotionEffect(new PotionEffect(MobEffects.INVISIBILITY, 30, 0, false, false));
+					entity.extinguish();
+					TickHandler.unregister(true, TickHandler.getHandler(entity, Identifier.ANA_GRENADE_DAMAGE));
+					TickHandler.register(true, ItemTracerPistol.RECALL.setEntity(entity).setTicks(35),
+							Handlers.PREVENT_INPUT.setEntity(entity).setTicks(30),
+							Handlers.PREVENT_MOVEMENT.setEntity(entity).setTicks(30),
+							Ability.ABILITY_USING.setEntity(entity).setTicks(30).setAbility(EnumHero.TRACER.ability1),
+							Handlers.INVULNERABLE.setEntity(entity).setTicks(30));
+				}
+				// Widowmaker's hook
+				else if (packet.type == 55 && entity instanceof EntityLivingBase && entity2 instanceof EntityWidowmakerHook) {
+					TickHandler.register(true, ItemWidowmakerRifle.HOOK.setEntity(entity2).setEntityLiving((EntityLivingBase) entity).setTicks(100),
+							Ability.ABILITY_USING.setEntity(entity).setTicks(100).setAbility(EnumHero.WIDOWMAKER.ability2));
+				}
+				// Reinhardt's charge
+				else if (packet.type == 56 && entity instanceof EntityLivingBase) {
+					TickHandler.Handler handler = TickHandler.getHandler(entity, Identifier.REINHARDT_CHARGE);
+					// register charge / updated pinned entity
+					if (packet.bool && (entity2 == null || entity2 instanceof EntityLivingBase)) {
+						if (handler == null) {
+							((EntityLivingBase)entity).rotationYaw = (float) packet.x;
+							ModSoundEvents.REINHARDT_CHARGE.playFollowingSound(entity, 1, 1, false);
+							TickHandler.register(true, ItemReinhardtHammer.CHARGE.setEntity(entity).setEntityLiving((EntityLivingBase) entity2).setTicks(80),
+									Handlers.ACTIVE_HAND.setEntity(entity).setTicks(80),
+									Handlers.PREVENT_ROTATION.setEntity(entity).setTicks(80),
+									Handlers.PREVENT_MOVEMENT.setEntity(entity).setTicks(80).setBoolean(true),
+									RenderManager.SNEAKING.setEntity(entity).setTicks(80));
+							if (entity == player)
+								TickHandler.register(true, Ability.ABILITY_USING.setEntity(entity).setTicks(80).setAbility(EnumHero.REINHARDT.ability3),
+										Handlers.FORCE_VIEW.setEntity(entity).setTicks(80).setNumber(3));
+						}
+						else {
+							TickHandler.interrupt(entity2);
+							handler.entityLiving = (EntityLivingBase) entity2;
+							handler.entityLiving.rotationPitch = 0;
+							handler.entityLiving.rotationYaw = MathHelper.wrapDegrees(entity.rotationYaw+180f);
+							handler.entityLiving.prevRotationYaw = handler.entityLiving.rotationYaw;
+							handler.entityLiving.prevRotationPitch = handler.entityLiving.rotationPitch;
+							TickHandler.register(true, Handlers.PREVENT_INPUT.setEntity(entity2).setTicks(handler.ticksLeft),
+									Handlers.PREVENT_ROTATION.setEntity(entity2).setTicks(handler.ticksLeft),
+									Handlers.PREVENT_MOVEMENT.setEntity(entity2).setTicks(handler.ticksLeft),
+									Handlers.FORCE_VIEW.setEntity(entity2).setTicks(handler.ticksLeft).setNumber(3),
+									RenderManager.MESSAGES.setEntity(entity2).setTicks(handler.ticksLeft).setString(TextFormatting.DARK_RED+""+TextFormatting.ITALIC+""+TextFormatting.BOLD+"PINNED").setNumber(MessageTypes.TOP.ordinal()));
+							TickHandler.register(true, RenderManager.MESSAGES.setEntity(entity).setTicks(handler.ticksLeft).setString(TextFormatting.AQUA+""+TextFormatting.ITALIC+""+TextFormatting.BOLD+"PINNED").setNumber(MessageTypes.TOP.ordinal()));
+						}
+					}
+					// unregister charge
+					else if (!packet.bool) {
+						// stop sound
+						ModSoundEvents.REINHARDT_CHARGE.stopFollowingSound(entity);
+						// spawn particle
+						RayTraceResult result = EntityHelper.getMouseOverBlock((EntityLivingBase) entity, 3, 0, entity.getRotationYawHead());
+						if (result != null) {
+							double x = result.hitVec.x;
+							double y = result.hitVec.y;
+							double z = result.hitVec.z;
+							if (result.sideHit == EnumFacing.SOUTH)
+								z = Math.ceil(z);
+							else if (result.sideHit == EnumFacing.EAST)
+								x = Math.ceil(x);
+							else if (result.sideHit == EnumFacing.UP)
+								y = Math.ceil(y);
+							Vec3d pos = new Vec3d(x, y, z);
+							Minewatch.proxy.spawnParticlesCustom(EnumParticle.REINHARDT_CHARGE, entity.world, pos.x, pos.y, pos.z, 0, 0, 0, 0xFFFFFF, 0xFFFFFF, 1.0f, 300, 10, 9, entity.world.rand.nextFloat(), 0, result.sideHit, true);
+						}
+						// unregister
+						TickHandler.unregister(true, handler, TickHandler.getHandler(entity, Identifier.ACTIVE_HAND),
+								TickHandler.getHandler(entity, Identifier.PREVENT_ROTATION),
+								TickHandler.getHandler(entity, Identifier.PREVENT_MOVEMENT),
+								TickHandler.getHandler(entity, Identifier.HERO_SNEAKING));
+						if (entity2 != null) {
+							TickHandler.unregister(true, TickHandler.getHandler(entity2, Identifier.PREVENT_INPUT),
+									TickHandler.getHandler(entity2, Identifier.PREVENT_ROTATION),
+									TickHandler.getHandler(entity2, Identifier.PREVENT_MOVEMENT),
+									TickHandler.getHandler(entity2, Identifier.FORCE_VIEW));
+							if (entity2 == player)
+								Minewatch.proxy.updateFOV();
+						}
+						if (entity == player)
+							TickHandler.unregister(true, TickHandler.getHandler(entity, Identifier.ABILITY_USING),
+									TickHandler.getHandler(entity, Identifier.FORCE_VIEW));
+					}
+				}
+				// stop following sound
+				else if (packet.type == 57 && entity != null && packet.string != null) {
+					Minewatch.proxy.stopFollowingSound(entity, packet.string);
+				}
+				// Two Reinhardt Charges colliding
+				else if (packet.type == 58 && entity != null && entity2 != null) {
+					TickHandler.unregister(true, TickHandler.getHandler(entity, Identifier.HERO_SNEAKING));
+					TickHandler.register(true, Handlers.PREVENT_INPUT.setEntity(entity).setTicks(20),
+							Handlers.PREVENT_ROTATION.setEntity(entity).setTicks(20),
+							Handlers.PREVENT_MOVEMENT.setEntity(entity).setTicks(20));
+					TickHandler.register(true, Handlers.PREVENT_INPUT.setEntity(entity2).setTicks(20),
+							Handlers.PREVENT_ROTATION.setEntity(entity2).setTicks(20),
+							Handlers.PREVENT_MOVEMENT.setEntity(entity2).setTicks(20));
+				}
+				// Set player's rotations
+				else if (packet.type == 59 && entity == player) {
+					player.prevRotationYaw = player.rotationYaw;
+					player.prevRotationPitch = player.rotationPitch;
+					player.rotationYaw = (float) packet.x;
+					player.rotationPitch = (float) packet.y;
+					//player.rotationYaw = (float) MathHelper.wrapDegrees(MathHelper.clamp(MathHelper.wrapDegrees(packet.x), MathHelper.wrapDegrees(player.rotationYaw-1), MathHelper.wrapDegrees(player.rotationYaw+1)));
+					//player.rotationPitch = (float) MathHelper.wrapDegrees(MathHelper.clamp(MathHelper.wrapDegrees(packet.y), MathHelper.wrapDegrees(player.rotationPitch-1), MathHelper.wrapDegrees(player.rotationPitch+1)));
+				}
+				// Ranks
+				else if (packet.type == 60) {
+					RankManager.clientRanks.clear();
+					for (Rank rank : Rank.values())
+						if ((((int)packet.x) >> rank.ordinal() & 1) == 1)
+							RankManager.clientRanks.add(rank);
+				}
+				// Sombra's hack
+				else if (packet.type == 61 && entity instanceof EntityLivingBase) {
+					if (packet.bool)
+						TickHandler.register(true, ItemSombraMachinePistol.HACK.setEntity(entity).setEntityLiving(null).setTicks(10));
+					else {
+						TickHandler.unregister(true, TickHandler.getHandler(entity, Identifier.SOMBRA_HACK));
+						// entity2 hacked
+						if (entity2 instanceof EntityLivingBase) {
+							ItemSombraMachinePistol.hackEntity((EntityLivingBase) entity, (EntityLivingBase)entity2);
+						}
+					}
+				}
+				// Doomfist's punch
+				else if (packet.type == 62 && entity != null) {
+					if (packet.bool) {
+						TickHandler.register(true, ItemDoomfistWeapon.PUNCH.setEntity(entity).setEntityLiving((EntityLivingBase) entity2).setTicks((int) packet.x).setNumber(packet.y),
+								Handlers.PREVENT_ROTATION.setEntity(entity).setTicks((int) packet.x));
+						if (entity == player)
+							TickHandler.register(true, Ability.ABILITY_USING.setEntity(entity).setTicks((int) packet.x).setAbility(EnumHero.DOOMFIST.ability1));
+					}
+					else {
+						// entity2 punched
+						if (entity2 instanceof EntityLivingBase) {
+							TickHandler.interrupt(entity2);
+							TickHandler.register(true, Handlers.PREVENT_INPUT.setEntity(entity2).setTicks((int) packet.x),
+									Handlers.PREVENT_ROTATION.setEntity(entity2).setTicks((int) packet.x),
+									Handlers.PREVENT_MOVEMENT.setEntity(entity2).setTicks((int) packet.x).setBoolean(true),
+									ItemDoomfistWeapon.PUNCHED.setEntity(entity2).setEntityLiving((EntityLivingBase) entity).setTicks((int) packet.x).setNumber(packet.y).setNumber2(packet.z).setAllowDead(true));
+							TickHandler.register(true, ItemDoomfistWeapon.PUNCH_ANIMATIONS.setEntity(entity).setTicks(5));
+							Vector2f rotations = EntityHelper.getEntityPartialRotations(entity);
+							Vec3d vec = EntityHelper.getShootingPos((EntityLivingBase) entity, rotations.x, rotations.y, EnumHand.MAIN_HAND, 0, 0.5f, 1);
+							Minewatch.proxy.spawnParticlesCustom(EnumParticle.CIRCLE, entity.world, vec.x, vec.y, vec.z, 0, 0, 0, 0xFFD9B2, 0xE8C4A2, 1f, 4, 10, 15, 0, 0);
+							Minewatch.proxy.spawnParticlesCustom(EnumParticle.DOOMFIST_PUNCH_3, entity.world, vec.x, vec.y, vec.z, 0, 0, 0, 0xFFFFFF, 0xFFFFFF, 0.7f, 4, 10, 15, 0, 0);
+						}
+						//TickHandler.unregister(true, TickHandler.getHandler(entity, Identifier.DOOMFIST_PUNCH),
+						//TickHandler.getHandler(entity, Identifier.PREVENT_ROTATION));
+						if (entity == player)
+							TickHandler.unregister(true, TickHandler.getHandler(entity, Identifier.ABILITY_USING));
+					}
+				}
+				// Doomfist's uppercut
+				else if (packet.type == 63 && entity != null) {
+					if (packet.bool) {
+						// entity2 hit by uppercut
+						if (entity2 instanceof EntityLivingBase) {
+							entity2.motionX += entity.motionX*2f;
+							entity2.motionZ += entity.motionZ*2f;
+							TickHandler.register(true, ItemDoomfistWeapon.UPPERCUT.setEntity(entity2).setEntityLiving((EntityLivingBase) entity).setTicks((int) packet.x).setAllowDead(true));
+						}
+						else
+							TickHandler.register(true, ItemDoomfistWeapon.UPPERCUTTING.setEntity(entity).setTicks((int) packet.x),
+									Ability.ABILITY_USING.setEntity(entity).setTicks((int) packet.x).setAbility(EnumHero.DOOMFIST.ability3));
+					}
+				}
+				// Doomfist's slam
+				else if (packet.type == 64 && entity != null) {
+					// entity2 hit by slam
+					if (entity2 instanceof EntityLivingBase) {
+						//TickHandler.register(true, ItemDoomfistWeapon.SLAM.setEntity(entity2).setEntityLiving((EntityLivingBase) entity).setTicks((int) packet.x));
+					}
+					else {
+						TickHandler.unregister(true, TickHandler.getHandler(player, Identifier.DOOMFIST_UPPERCUTTING));
+						TickHandler.register(true, ItemDoomfistWeapon.SLAM.setEntity(entity).setTicks(10).setPosition(new Vec3d(packet.x, packet.y, packet.z)).setNumber2(entity.posY),
+								Ability.ABILITY_USING.setEntity(entity).setTicks(50).setAbility(EnumHero.DOOMFIST.ability2));
+					}
+				}
+				// cancel dead handler
+				else if (packet.type == 65 && entity != null)
+					TickHandler.unregister(true, TickHandler.getHandler(entity, Identifier.DEAD));
+				// doomfist charge punch
+				else if (packet.type == 66 && entity instanceof EntityLivingBase) {
+					Minewatch.proxy.spawnParticlesMuzzle(EnumParticle.DOOMFIST_PUNCH_3, entity.world, (EntityLivingBase) entity, 0xFFFFFF, 0xDDDDFF, 1, EnumHero.DOOMFIST.weapon.getMaxItemUseDuration(((EntityLivingBase)entity).getHeldItemMainhand())+8, 4, 6, entity.world.rand.nextFloat()*2f, 0.01f, EnumHand.MAIN_HAND, 5, 1);
+					((EntityLivingBase) entity).setActiveHand(EnumHand.MAIN_HAND);
+				}
+				// doomfist slam
+				else if (packet.type == 67 && entity != null) {
+					ItemDoomfistWeapon.spawnSlamParticles(entity.world, (float) packet.x2, new Vec3d(packet.x, packet.y, packet.z));
+				}
+				// update TileEntityTeam (because sometimes it's removed from tickableTileEntities)
+				else if (packet.type == 68 && player != null) {
+					TileEntity te = player.world.getTileEntity(new BlockPos(packet.x, packet.y, packet.z));
+					if (te != null && te instanceof TileEntityTeam && !player.world.tickableTileEntities.contains(te))
+						te.invalidate();
+				}
+				// show health bar
+				else if (packet.type == 69 && entity != null) {
+					TickHandler.register(true, HealthManager.SHOW_HEALTH.setEntity(entity).setTicks(100));
+				}
+				// add / remove health
+				else if (packet.type == 70 && entity instanceof EntityLivingBase && packet.y >= 0 && packet.y < HealthManager.Type.values().length) {
+					HealthManager.Type type = HealthManager.Type.values()[(int) packet.y];
+					if (packet.bool)
+						HealthManager.addHealth((EntityLivingBase) entity, type, (float) packet.x);
+					else
+						HealthManager.removeHealth((EntityLivingBase) entity, type, null, (float) packet.x);
+				}
+				// non health shield
+				else if (packet.type == 71 && entity instanceof EntityLivingBase) {
+					TickHandler.Handler handler = TickHandler.getHandler(entity, Identifier.HEALTH_NON_HEALTH_SHIELD);
+					if (handler == null)
+						TickHandler.register(true, HealthManager.NON_HEALTH_SHIELD.setEntity(entity).setTicks(999999).setNumber(packet.x));
+					else
+						handler.setNumber(packet.x);
+				}
+				// hanzo sonic hit entity
+				else if (packet.type == 72 && entity != null && entity2 instanceof EntityLivingBase) {
+					TickHandler.register(true, EntityHanzoSonicArrow.SONIC.setEntity(entity).setEntityLiving((EntityLivingBase) entity2).setTicks(0).setAllowDead(true));
+				}
+				// health shield decay
+				else if (packet.type == 73 && entity instanceof EntityLivingBase) {
+					HealthManager.setShieldAbilityDecay((EntityLivingBase) entity, (float) packet.x, (float) packet.y, (int) packet.z);
+				}
+				// roadhog heal
+				else if (packet.type == 74 && entity instanceof EntityLivingBase) {
+					TickHandler.register(true, ItemRoadhogWeapon.HEALING.setEntity(entity).setTicks(36));
+					if (entity == player)
+						TickHandler.register(true, Ability.ABILITY_USING.setEntity(player).setTicks(36).setAbility(EnumHero.ROADHOG.ability1));
+				}
+				// 3rd person / 1st person
+				else if (packet.type == 75 && packetPlayer == player) {
+					if (packet.bool && Minecraft.getMinecraft().gameSettings.thirdPersonView == 0)
+						Minecraft.getMinecraft().gameSettings.thirdPersonView = 1;
+					else if (!packet.bool && Minecraft.getMinecraft().gameSettings.thirdPersonView != 0)
+						Minecraft.getMinecraft().gameSettings.thirdPersonView = 0;
+				}
+				// roadhog hook
+				else if (packet.type == 76 && entity2 instanceof EntityRoadhogHook && entity instanceof EntityLivingBase) {
+					TickHandler.register(true, ItemRoadhogWeapon.HOOKING.setEntity(entity2).setEntityLiving((EntityLivingBase) entity).setTicks((int) packet.x));
+					if (entity == player)
+						TickHandler.register(true, Ability.ABILITY_USING.setEntity(player).setTicks((int) packet.x).setAbility(EnumHero.ROADHOG.ability2));
+				}
+				// roadhog hook attach / retract
+				else if (packet.type == 77 && entity instanceof EntityRoadhogHook) {
+					if (entity2 instanceof EntityLivingBase)
+						((EntityRoadhogHook)entity).setHooked((EntityLivingBase) entity2);
+					((EntityRoadhogHook)entity).setRetracting();
+				}
+				// print client handlers
+				else if (packet.type == 78) {
+					player.sendMessage(new TextComponentString("Client handlers: "+TickHandler.getHandlersString(true)));
+				}
+				// sync ultimate charge
+				else if (packet.type == 79) {
+					UltimateManager.setCharge(player, (float) packet.x, false);
+				}
+				// widowmaker's ult
+				else if (packet.type == 80 && entity instanceof EntityLivingBase) {
+					if (entity == player)
+						TickHandler.register(true, ItemWidowmakerRifle.ULTIMATE.setEntity(player).setTicks((int) packet.x));
+					for (Entity target : entity.world.loadedEntityList)
+						if (target instanceof EntityLivingBase && EntityHelper.shouldTarget(entity, target, false))
+							TickHandler.register(true, Handlers.CLIENT_GLOWING.setEntity(target).setTicks((int) packet.x));
+				}
+				// pharah's concussive
+				else if (packet.type == 81 && entity instanceof EntityLivingBase) {
+					TickHandler.register(true, ItemPharahWeapon.CONCUSSIVE.setEntity(entity).setTicks(10));
+				}
+				// pharah's jump jet
+				else if (packet.type == 82 && entity instanceof EntityLivingBase) {
+					entity.onGround = false;
+					entity.motionY = Math.max(Config.lowerGravity ? 1.7f : 2, entity.motionY);
+					Vec3d look = EntityHelper.getLook(0, entity.getRotationYawHead()).scale(0.9d);
+					entity.motionX += look.x;
+					entity.motionZ += look.z;
+					TickHandler.register(true, ItemPharahWeapon.JET.setEntity(entity).setTicks(15));
+				}
+				// widowmaker's ult - start tracking entity
+				else if (packet.type == 83 && entity instanceof EntityLivingBase && entity2 instanceof EntityLivingBase) {
+					TickHandler.register(true, Handlers.CLIENT_GLOWING.setEntity(entity2).setTicks((int) packet.x));
+				}
+				// pharah's ult
+				else if (packet.type == 84 && entity instanceof EntityLivingBase) {
+					TickHandler.register(true, ItemPharahWeapon.ULTIMATE.setEntity(entity).setTicks(60),
+							Handlers.PREVENT_MOVEMENT.setEntity(entity).setTicks(60),
+							UltimateManager.PREVENT_CHARGE.setEntity(entity).setTicks(60));
+				}
+				// login event
+				else if (packet.type == 85 && entity instanceof EntityLivingBase && packet.x >= 0 && packet.x < EventManager.Type.values().length) {
+					EventManager.onEvent(EventManager.Type.values()[(int) packet.x], (EntityLivingBase) entity);
+				}
+				// cancel Reaper's wraith
+				else if (packet.type == 86 && entity != null) {
+					TickHandler.unregister(true, TickHandler.getHandler(entity, Identifier.ABILITY_USING),
+							TickHandler.getHandler(entity, Identifier.REAPER_WRAITH),
+							TickHandler.getHandler(entity, Identifier.INVULNERABLE),
+							TickHandler.getHandler(entity, Identifier.VIEW_BOBBING));
+				}
+				// Sombra's ult
+				else if (packet.type == 87 && entity instanceof EntityLivingBase) {
+					TickHandler.register(true, ItemSombraMachinePistol.ULTIMATE.setEntity(entity).setTicks((int) packet.x),
+							Handlers.PREVENT_MOVEMENT.setEntity(entity).setTicks((int) packet.x),
+							UltimateManager.PREVENT_CHARGE.setEntity(entity).setTicks((int) packet.x),
+							Ability.ABILITY_USING.setEntity(entity).setTicks((int) packet.x).setAbility(EnumHero.SOMBRA.ultimate));
+					AttachmentManager.addAttachments((EntityLivingBase)entity, Type.SOMBRA_ULTIMATE_DOME);
+					entity.onGround = false;
+					entity.move(MoverType.PLAYER, 0, 2d, 0);
+					boolean friendly = !EntityHelper.shouldHit(entity, Minecraft.getMinecraft().getRenderViewEntity(), false);
+					int color = friendly ? 0xDC89FE : 0xFF6666;
+					int colorFade = friendly ? 0xEEF0F4 : 0xAF6666;
+					Minewatch.proxy.spawnParticlesCustom(EnumParticle.SOMBRA_ULTIMATE_0, entity.world, entity, color, colorFade, 5, 18, 15, 34, 0, 0);
+					Minewatch.proxy.spawnParticlesCustom(EnumParticle.SOMBRA_ULTIMATE_0, entity.world, entity, color, colorFade, 5, 18, 15, 34, 0, 0);
+					Minewatch.proxy.spawnParticlesCustom(EnumParticle.CIRCLE, entity.world, entity, color, color, 0.8f, 18, 20, 45, 0, 0);
+				}
+				// Roadhog's ult
+				else if (packet.type == 88 && entity instanceof EntityLivingBase) {
+					TickHandler.register(true, ItemRoadhogWeapon.ULTIMATE.setEntity(entity).setTicks((int) packet.x),
+							UltimateManager.PREVENT_CHARGE.setEntity(entity).setTicks((int) packet.x),
+							Ability.ABILITY_USING.setEntity(entity).setTicks((int) packet.x).setAbility(EnumHero.ROADHOG.ultimate));
+				}
+				// print following sounds
+				else if (packet.type == 89) {
+					player.sendMessage(new TextComponentString("Sounds: "+FollowingSound.sounds));
 				}
 			});
 			return null;

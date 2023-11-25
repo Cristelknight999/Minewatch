@@ -134,7 +134,7 @@ public class ItemMoiraWeapon extends ItemMWWeapon {
 			else if (entity.ticksExisted % 5 == 0) {
 				if (entityLiving == null || !entityLiving.isEntityAlive()) 
 					entityLiving = EntityHelper.getTargetInFieldOfVision((EntityLivingBase) entity, 21, 5, false, false);
-				else if (!EntityHelper.isInFieldOfVision(entity, entityLiving, 5) || entityLiving.getDistanceToEntity(entity) > 21)
+				else if (!EntityHelper.isInFieldOfVision(entity, entityLiving, 5) || entityLiving.getDistance(entity) > 21)
 					entityLiving = null;
 				if (!checkTargetInShootingView((EntityLivingBase) entity, entityLiving))
 					entityLiving = null;
@@ -165,7 +165,7 @@ public class ItemMoiraWeapon extends ItemMWWeapon {
 			else if (entity.ticksExisted % 5 == 0) {
 				if (entityLiving == null || !entityLiving.isEntityAlive()) 
 					entityLiving = EntityHelper.getTargetInFieldOfVision((EntityLivingBase) entity, 21, 5, false, false);
-				else if (!EntityHelper.isInFieldOfVision(entity, entityLiving, 5) || entityLiving.getDistanceToEntity(entity) > 21)
+				else if (!EntityHelper.isInFieldOfVision(entity, entityLiving, 5) || entityLiving.getDistance(entity) > 21)
 					entityLiving = null;
 				if (!checkTargetInShootingView((EntityLivingBase) entity, entityLiving))
 					entityLiving = null;
@@ -367,7 +367,7 @@ public class ItemMoiraWeapon extends ItemMWWeapon {
 
 			Minecraft.getMinecraft().getTextureManager().bindTexture(handler.entityLiving == null ? DAMAGE_BEAM_MISS : DAMAGE_BEAM_HIT);
 
-			double distance = handler.entityLiving == null ? 5 : handler.entityLiving.getDistanceToEntity(handler.entity)-handler.entity.width/2f-handler.entityLiving.width/2f;
+			double distance = handler.entityLiving == null ? 5 : handler.entityLiving.getDistance(handler.entity)-handler.entity.width/2f-handler.entityLiving.width/2f;
 			double size = handler.entityLiving == null ? 5 : 2;
 			double deg_to_rad = 0.0174532925d;
 			double precision = 0.05d;

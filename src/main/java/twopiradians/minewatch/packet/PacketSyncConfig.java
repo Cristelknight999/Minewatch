@@ -288,12 +288,9 @@ public class PacketSyncConfig implements IMessage {
 		@Override
 		public IMessage onMessage(final PacketSyncConfig packet, final MessageContext ctx) {
 			IThreadListener mainThread = Minecraft.getMinecraft();
-			mainThread.addScheduledTask(new Runnable() {
-				@Override
-				public void run() {
-					packet.run();
-					Minewatch.logger.info("Synced config from server.");
-				}
+			mainThread.addScheduledTask(() -> {
+				packet.run();
+				Minewatch.logger.info("Synced config from server.");
 			});
 			return null;
 		}
@@ -304,20 +301,16 @@ public class PacketSyncConfig implements IMessage {
 		@Override
 		public IMessage onMessage(final PacketSyncConfig packet, final MessageContext ctx) {
 			IThreadListener mainThread = (WorldServer) ctx.getServerHandler().player.world;
-			mainThread.addScheduledTask(new Runnable() {
-
-				@Override
-				public void run() {
-					EntityPlayer player = ctx.getServerHandler().player;
-					if (player != null) {
-						if (player.getServer().getPlayerList().canSendCommands(player.getGameProfile())) {
-							packet.run(); 
-							Minewatch.network.sendToAll(new PacketSyncConfig()); // sync new config to all clients
-							player.sendMessage(new TextComponentString(TextFormatting.GREEN+"Successfully synced config to server."));
-						}
-						else
-							player.sendMessage(new TextComponentString(TextFormatting.RED+"You do not have permission to do that."));
+			mainThread.addScheduledTask(() -> {
+				EntityPlayer player = ctx.getServerHandler().player;
+				if (player != null) {
+					if (player.getServer().getPlayerList().canSendCommands(player.getGameProfile())) {
+						packet.run();
+						Minewatch.network.sendToAll(new PacketSyncConfig()); // sync new config to all clients
+						player.sendMessage(new TextComponentString(TextFormatting.GREEN+"Successfully synced config to server."));
 					}
+					else
+						player.sendMessage(new TextComponentString(TextFormatting.RED+"You do not have permission to do that."));
 				}
 			});
 			return null;

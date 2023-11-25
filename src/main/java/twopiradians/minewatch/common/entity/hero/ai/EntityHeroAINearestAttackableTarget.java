@@ -31,7 +31,7 @@ public class EntityHeroAINearestAttackableTarget<T extends EntityLivingBase> ext
 				EntityHelper.shouldHit(this.taskOwner, target, false) && target != this.taskOwner && 
 				!TickHandler.hasHandler(target, Identifier.ANA_SLEEP) && 
 				(!TickHandler.hasHandler(target, Identifier.SOMBRA_INVISIBLE) || 
-						this.taskOwner.getDistanceToEntity(target) < 5) && 
+						this.taskOwner.getDistance(target) < 5) &&
 				!TickHandler.hasHandler(target, Identifier.MEI_CRYSTAL);
 	}
 

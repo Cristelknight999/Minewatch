@@ -153,7 +153,7 @@ public class ItemSombraMachinePistol extends ItemMWWeapon {
 
 				// check entity
 				if (entityLiving != null && (!EntityHelper.isInFieldOfVision(entity, entityLiving, 10) || 
-						entityLiving.getDistanceToEntity(entity) > 15 || EntityHelper.shouldIgnoreEntity(entityLiving) ||
+						entityLiving.getDistance(entity) > 15 || EntityHelper.shouldIgnoreEntity(entityLiving) ||
 						!checkTargetInShootingView((EntityLivingBase) entity, entityLiving.getPositionVector().addVector(0, entityLiving.height/2f, 0))))
 					entityLiving = null;
 				// check health pack
@@ -215,7 +215,7 @@ public class ItemSombraMachinePistol extends ItemMWWeapon {
 
 				// check entity
 				if (entityLiving != null && (!EntityHelper.isInFieldOfVision(entity, entityLiving, 10) || 
-						entityLiving.getDistanceToEntity(entity) > 15 || EntityHelper.shouldIgnoreEntity(entityLiving) ||
+						entityLiving.getDistance(entity) > 15 || EntityHelper.shouldIgnoreEntity(entityLiving) ||
 						!checkTargetInShootingView((EntityLivingBase) entity, entityLiving.getPositionVector().addVector(0, entityLiving.height/2f, 0))))
 					entityLiving = null;
 				// check health pack

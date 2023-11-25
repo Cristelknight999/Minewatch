@@ -934,7 +934,7 @@ public class RenderManager {
 				GlStateManager.pushMatrix();
 
 				Minecraft mc = Minecraft.getMinecraft();
-				double scale = 0.02f + mc.player.getDistanceToEntity(event.getEntity())/1000f;
+				double scale = 0.02f + mc.player.getDistance(event.getEntity())/1000f;
 				boolean isThirdPersonFrontal = mc.getRenderManager().options.thirdPersonView == 2;
 				float viewerYaw = mc.getRenderManager().playerViewY;
 				float viewerPitch = mc.getRenderManager().playerViewX;
@@ -950,7 +950,7 @@ public class RenderManager {
 				GlStateManager.enableDepth();
 
 				// translate based on distance
-				GlStateManager.translate(0, -mc.player.getDistanceToEntity(event.getEntity())/6f, 0);
+				GlStateManager.translate(0, -mc.player.getDistance(event.getEntity())/6f, 0);
 
 				// health bar
 				if (!enemy || TickHandler.hasHandler(event.getEntity(), Identifier.HEALTH_SHOW_BAR) ||

@@ -232,18 +232,8 @@ public class ClientProxy extends CommonProxy {
 
 	private void registerColoredItems() {
 		for (IChangingModel item : ModItems.changingModelItems)
-			Minecraft.getMinecraft().getItemColors().registerItemColorHandler(new IItemColor() {
-				@Override
-				public int getColorFromItemstack(ItemStack stack, int tintIndex) {
-					return item.getColorFromItemStack(stack, tintIndex);
-				}
-			}, item.getItem());
-		Minecraft.getMinecraft().getItemColors().registerItemColorHandler(new IItemColor() {
-			@Override
-			public int getColorFromItemstack(ItemStack stack, int tintIndex) {
-				return ItemTeamStick.getColorFromItemStack(stack, tintIndex);
-			}
-		}, ModItems.team_stick);
+			Minecraft.getMinecraft().getItemColors().registerItemColorHandler(item::getColorFromItemStack, item.getItem());
+		Minecraft.getMinecraft().getItemColors().registerItemColorHandler(ItemTeamStick::getColorFromItemStack, ModItems.team_stick);
 	}
 
 	private void registerInventoryTab() {

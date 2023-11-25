@@ -36,7 +36,7 @@ public class EntityLucio extends EntityHero {
 					ItemMWWeapon.isAlternate(this.getHeldItemMainhand()))
 				this.getDataManager().set(KeyBind.ABILITY_1.datamanager, true);
 			// change to heal when healtarget or less than full health
-			else if (((this.healTarget != null && this.getDistanceToEntity(this.healTarget) <= 10) || this.getHealth() < this.getMaxHealth()) && 
+			else if (((this.healTarget != null && this.getDistance(this.healTarget) <= 10) || this.getHealth() < this.getMaxHealth()) &&
 					!ItemMWWeapon.isAlternate(this.getHeldItemMainhand()))
 				this.getDataManager().set(KeyBind.ABILITY_1.datamanager, true);
 			else

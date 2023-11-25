@@ -285,7 +285,7 @@ public class ItemReaperShotgun extends ItemMWWeapon {
 					if (tpVec != null && !world.isRemote && player.onGround && 
 							!(player instanceof EntityHero && (player.getPositionVector().distanceTo(tpVec) < 10 || 
 									(((EntityHero)player).getAttackTarget() != null && 
-									player.getDistanceToEntity(((EntityHero)player).getAttackTarget()) < 
+									player.getDistance(((EntityHero)player).getAttackTarget()) <
 									((EntityHero)player).getAttackTarget().getPositionVector().distanceTo(tpVec))))) {
 						player.rotationPitch = 0;
 						Minewatch.network.sendToAll(new SPacketSimple(1, player, false, tpVec.x, tpVec.y, tpVec.z));

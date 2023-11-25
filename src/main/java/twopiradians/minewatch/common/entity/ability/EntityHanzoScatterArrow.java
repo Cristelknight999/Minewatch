@@ -3,6 +3,7 @@ package twopiradians.minewatch.common.entity.ability;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.util.EnumFacing;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Rotations;
 import net.minecraft.util.math.Vec3d;
@@ -65,7 +66,8 @@ public class EntityHanzoScatterArrow extends EntityHanzoArrow {
 						entityarrow.motionY = this.motionY;
 						entityarrow.motionZ = this.motionZ;
 
-						entityarrow.setThrowableHeading(entityarrow.motionX, entityarrow.motionY, entityarrow.motionZ, 2.0f, 10.0f);
+
+						entityarrow.moveToBlockPosAndAngles(new BlockPos(entityarrow.motionX, entityarrow.motionY, entityarrow.motionZ), 2.0f, 10.0f);
 						entityarrow.getDataManager().set(VELOCITY_CLIENT, new Rotations((float) entityarrow.motionX, (float) entityarrow.motionY, (float) entityarrow.motionZ));
 						if (result.entityHit != null)
 							entityarrow.ignoreEntity = result.entityHit;

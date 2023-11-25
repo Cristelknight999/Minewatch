@@ -140,7 +140,7 @@ public class ItemMercyWeapon extends ItemMWWeapon {
 		if (isSelected && !world.isRemote && entity instanceof EntityLivingBase) {
 			// remove beams that are dead or too far away (unloaded - where they can't kill themselves)
 			if (beams.containsKey(entity) && (!beams.get(entity).isEntityAlive()|| 
-					Math.sqrt(entity.getDistanceSqToEntity(beams.get(entity))) > 16)) {
+					Math.sqrt(entity.getDistanceSq(beams.get(entity))) > 16)) {
 				beams.get(entity).setDead();
 				beams.remove(entity);
 				// stop sound

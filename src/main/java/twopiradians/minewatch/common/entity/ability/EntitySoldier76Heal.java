@@ -41,7 +41,7 @@ public class EntitySoldier76Heal extends EntityMW {
 		// effect
 		if (!world.isRemote && this.ticksExisted % 2 == 0 && this.onGround)
 			for (EntityLivingBase entity : world.getEntitiesWithinAABB(EntityLivingBase.class, getEntityBoundingBox().grow(5)))
-				if (entity.isEntityAlive() && this.getDistanceToEntity(entity) <= 5) 
+				if (entity.isEntityAlive() && this.getDistance(entity) <= 5)
 					EntityHelper.attemptDamage(getThrower(), entity, -4.08f, true);
 
 		boolean firstOnGround = this.onGround;

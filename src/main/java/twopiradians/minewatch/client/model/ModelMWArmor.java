@@ -49,7 +49,7 @@ public class ModelMWArmor extends ModelPlayer {
 		boolean preventColoring = true;
 		if (entityIn instanceof EntityLivingBase) {
 			EntityLivingBase entity = (EntityLivingBase) entityIn;
-			EnumHero hero = entity.getHeldItemMainhand() != null && entity.getHeldItemMainhand().getItem() instanceof ItemMWWeapon ? 
+			EnumHero hero = entity.getHeldItemMainhand() != null && entity.getHeldItemMainhand().getItem() instanceof ItemMWWeapon ?
 					((ItemMWWeapon)entity.getHeldItemMainhand().getItem()).hero : null;
 					preventColoring = hero != null && hero.weapon.preRenderArmor((EntityLivingBase) entityIn, this);
 					// only do more coloring if preRenderArmor returns false or hero is null
@@ -109,7 +109,7 @@ public class ModelMWArmor extends ModelPlayer {
 
 	@Override
 	public void setLivingAnimations(EntityLivingBase entityIn, float limbSwing, float limbSwingAmount, float partialTickTime) {
-		if (((RenderLivingBase)Minecraft.getMinecraft().getRenderManager().getEntityRenderObject(entityIn)).getMainModel() instanceof ModelBiped) {
+		if (((RenderLivingBase<?>)Minecraft.getMinecraft().getRenderManager().getEntityRenderObject(entityIn)).getMainModel() instanceof ModelBiped) {
 			ModelBiped model = (ModelBiped) ((RenderLivingBase)Minecraft.getMinecraft().getRenderManager().getEntityRenderObject(entityIn)).getMainModel();
 			model.setLivingAnimations(entityIn, limbSwing, limbSwingAmount, partialTickTime);
 			copyModelAngles(model.bipedHead, this.bipedHead);

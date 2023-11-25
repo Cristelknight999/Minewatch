@@ -952,7 +952,7 @@ public class EntityHelper {
 			@Override
 			public boolean apply(Entity input) {
 				return input instanceof EntityLivingBase && EntityHelper.shouldHit(shooter, input, friendly) && !shouldIgnoreEntity(input, friendly, !ignoreEntityLivingBaseMW) && 
-						shooter.canEntityBeSeen(input) && shooter.getDistanceToEntity(input) <= range && (predicate == null || predicate.apply((EntityLivingBase) input));
+						shooter.canEntityBeSeen(input) && shooter.getDistance(input) <= range && (predicate == null || predicate.apply((EntityLivingBase) input));
 			}
 		})) {
 			float newAngle = EntityHelper.getMaxFieldOfVisionAngle(shooter, entity);
@@ -1165,7 +1165,7 @@ public class EntityHelper {
 
 			if (entity instanceof EntityCreature)
 			{
-				((EntityCreature)entity).getNavigator().clearPathEntity();
+				((EntityCreature)entity).getNavigator().clearPath();
 			}
 
 			return true;

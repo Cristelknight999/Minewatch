@@ -483,7 +483,7 @@ public class ItemDoomfistWeapon extends ItemMWWeapon {
 		}
 
 		// check for wall impact
-		if (handler.entity.isCollidedHorizontally) {
+		if (handler.entity.collidedHorizontally) {
 			handler.ticksLeft = 1;
 			handler.entity.motionX = 0;
 			handler.entity.motionZ = 0;
